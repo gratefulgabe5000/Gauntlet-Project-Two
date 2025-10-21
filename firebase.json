@@ -1,0 +1,7 @@
+{
+  "firestore": {
+    "rules": "messageai/firestore.rules",
+    "indexes": "messageai/firestore.indexes.json"
+  }
+}
+

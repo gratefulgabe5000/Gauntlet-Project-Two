@@ -1,0 +1,76 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isParticipant(participantIds) {
+      return request.auth.uid in participantIds;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Anyone can read user profiles (for displaying names/avatars)
+      allow read: if isSignedIn();
+      
+      // Users can only create/update their own profile
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId);
+      
+      // Users cannot delete their profile
+      allow delete: if false;
+    }
+    
+    // Conversations collection
+    match /conversations/{conversationId} {
+      // Can read if you're a participant
+      allow read: if isSignedIn() && 
+                     isParticipant(resource.data.participantIds);
+      
+      // Can create conversation if signed in and you're in participant list
+      allow create: if isSignedIn() && 
+                       isParticipant(request.resource.data.participantIds) &&
+                       request.resource.data.createdBy == request.auth.uid;
+      
+      // Can update conversation metadata if you're a participant
+      allow update: if isSignedIn() && 
+                       isParticipant(resource.data.participantIds);
+      
+      // Only the creator can delete a conversation
+      allow delete: if isSignedIn() && 
+                       resource.data.createdBy == request.auth.uid;
+    }
+    
+    // Messages collection
+    match /messages/{messageId} {
+      // Can read messages if you're a participant of the conversation
+      allow read: if isSignedIn() && 
+                     exists(/databases/$(database)/documents/conversations/$(resource.data.conversationId)) &&
+                     isParticipant(get(/databases/$(database)/documents/conversations/$(resource.data.conversationId)).data.participantIds);
+      
+      // Can create message if you're a participant and you're the sender
+      allow create: if isSignedIn() && 
+                       request.resource.data.senderId == request.auth.uid &&
+                       exists(/databases/$(database)/documents/conversations/$(request.resource.data.conversationId)) &&
+                       isParticipant(get(/databases/$(database)/documents/conversations/$(request.resource.data.conversationId)).data.participantIds);
+      
+      // Can update your own message (for editing, marking as read, etc.)
+      allow update: if isSignedIn() && 
+                       (resource.data.senderId == request.auth.uid ||
+                        isParticipant(get(/databases/$(database)/documents/conversations/$(resource.data.conversationId)).data.participantIds));
+      
+      // Can delete your own message
+      allow delete: if isSignedIn() && 
+                       resource.data.senderId == request.auth.uid;
+    }
+  }
+}
+

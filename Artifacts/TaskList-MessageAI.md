@@ -162,7 +162,7 @@ messageai/
 | 1.1.8 | Configure ESLint and Prettier | 10m | ⏳ | 1.1.1 | `.eslintrc.js`, `.prettierrc` |
 | 1.1.9 | Set up git repository | 10m | ⏳ | 1.1.1 | `.gitignore`, `README.md` |
 
-**Checkpoint 1.1:** Expo app runs on device/emulator, Firebase connected
+**Checkpoint 1.1:** Expo app runs on device/emulator, Firebase connected ✅ **COMPLETE**
 
 ---
 
@@ -180,7 +180,7 @@ messageai/
 | 1.2.8 | Add Google Sign-In (Expo AuthSession) | 30m | ⏳ | 1.2.3 | `src/components/auth/GoogleSignIn.tsx` |
 | 1.2.9 | Implement auth flow navigation | 10m | ⏳ | 1.2.6, 1.2.7 | `app/_layout.tsx` |
 
-**Checkpoint 1.2:** User can sign up, login, and persist session
+**Checkpoint 1.2:** User can sign up, login, and persist session ✅ **MOSTLY COMPLETE** (Google Sign-In deferred)
 
 ---
 
@@ -209,7 +209,7 @@ messageai/
 | 1.4.5 | Build Settings screen (basic) | 10m | ⏳ | 1.4.2 | `app/(tabs)/settings.tsx` |
 | 1.4.6 | Add navigation between screens | 10m | ⏳ | 1.4.2 | `app/_layout.tsx` |
 
-**Checkpoint 1.4:** Can navigate between all main screens
+**Checkpoint 1.4:** Can navigate between all main screens ✅ **COMPLETE**
 
 ---
 
@@ -223,7 +223,7 @@ messageai/
 | 1.5.4 | Write Firestore security rules for messages | 20m | ⏳ | 1.5.3 | `firestore.rules` |
 | 1.5.5 | Write Firestore security rules for conversations | 20m | ⏳ | 1.5.3 | `firestore.rules` |
 
-**Checkpoint 1.5:** Firestore schema defined and secured
+**Checkpoint 1.5:** Firestore schema defined and secured ✅ **COMPLETE** (Rules deployed)
 
 ---
 
@@ -245,16 +245,16 @@ messageai/
 | 1.6.12 | Build MessageInput component | 20m | ⏳ | 1.6.2 | `src/components/messages/MessageInput.tsx` |
 | 1.6.13 | Build conversation detail screen | 30m | ⏳ | 1.6.11, 1.6.12 | `app/conversation/[id].tsx` |
 
-**Checkpoint 1.6:** Can create conversation and see messages UI
+**Checkpoint 1.6:** Can create conversation and see messages UI ✅ **COMPLETE** (New chat functionality working)
 
 ---
 
 **DAY 1 END CHECKPOINT:**
 
-- [ ] Auth working (login/signup)
-- [ ] User profiles created
-- [ ] Navigation structure complete
-- [ ] Messages UI built (no real-time yet)
+- [x] Auth working (login/signup) ✅
+- [ ] User profiles created ⚠️ (Partial - avatars exist but full profile management pending)
+- [x] Navigation structure complete ✅
+- [x] Messages UI built (no real-time yet) ✅
 
 ---
 
