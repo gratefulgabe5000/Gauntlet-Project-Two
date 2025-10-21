@@ -6,10 +6,12 @@ import { auth, db } from '../../src/services/firebase/config';
 import { subscribeToUserConversations } from '../../src/services/firebase/firestore';
 import { doc, getDoc } from 'firebase/firestore';
 import ConversationList from '../../src/components/conversations/ConversationList';
+import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import type { Conversation, ConversationSummary, User } from '../../src/types/models';
 
 export default function Conversations() {
   const router = useRouter();
+  const { isOnline } = useNetworkStatus();
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -65,15 +67,32 @@ export default function Conversations() {
     <View style={styles.container}>
       <StatusBar style="dark" />
       
+      {/* Offline Banner */}
+      {!isOnline && (
+        <View style={styles.offlineBanner}>
+          <Text style={styles.offlineBannerText}>
+            ⚠️ You're offline
+          </Text>
+        </View>
+      )}
+      
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Messages</Text>
-             <TouchableOpacity 
-               style={styles.newButton}
-               onPress={() => router.push('/(tabs)/new-chat')}
-             >
-               <Text style={styles.newButtonText}>+</Text>
-             </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity 
+            style={styles.groupButton}
+            onPress={() => router.push('/(tabs)/new-group')}
+          >
+            <Text style={styles.groupButtonText}>👥</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.newButton}
+            onPress={() => router.push('/(tabs)/new-chat')}
+          >
+            <Text style={styles.newButtonText}>+</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Conversation List */}
@@ -107,6 +126,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
   },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  groupButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#34C759',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  groupButtonText: {
+    fontSize: 18,
+  },
   newButton: {
     width: 36,
     height: 36,
@@ -119,5 +153,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '400',
     color: '#fff',
+  },
+  offlineBanner: {
+    backgroundColor: '#FF9500',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  offlineBannerText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

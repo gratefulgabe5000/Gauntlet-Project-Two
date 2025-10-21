@@ -21,6 +21,13 @@ export interface Message {
   timestamp: string;
   status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
   
+  // Read receipts
+  readBy?: string[]; // Array of user IDs who have read this message
+  
+  // Optimistic UI
+  optimistic?: boolean; // True if message hasn't been confirmed by server yet
+  tempId?: string; // Temporary ID for optimistic messages
+  
   // AI features
   aiGenerated?: boolean;
   aiContext?: string;
@@ -110,6 +117,7 @@ export interface SendMessageRequest {
   content: string;
   type: 'text' | 'image' | 'file';
   mediaUrl?: string;
+  timestamp?: string; // Optional: preserve original timestamp for offline messages
 }
 
 export interface UpdateMessageRequest {

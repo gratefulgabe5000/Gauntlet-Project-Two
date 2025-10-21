@@ -7,6 +7,7 @@ import {
   deleteDoc,
   getDoc,
   getDocs,
+  setDoc,
   query,
   where,
   orderBy,
@@ -61,6 +62,18 @@ export async function updateUserStatus(
   }
 }
 
+export async function updateUserProfile(
+  uid: string,
+  updates: { displayName?: string; photoURL?: string }
+): Promise<void> {
+  try {
+    await updateDoc(doc(usersCollection, uid), updates);
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    throw error;
+  }
+}
+
 // ================== CONVERSATION OPERATIONS ==================
 
 export async function createConversation(
@@ -86,6 +99,30 @@ export async function createConversation(
     return docRef.id;
   } catch (error) {
     console.error('Error creating conversation:', error);
+    throw error;
+  }
+}
+
+export async function createGroupConversation(
+  groupName: string,
+  participantIds: string[],
+  createdBy: string
+): Promise<string> {
+  try {
+    const conversationData: Partial<Conversation> = {
+      type: 'group',
+      name: groupName,
+      participantIds,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdBy,
+      unreadCount: {},
+    };
+
+    const docRef = await addDoc(conversationsCollection, conversationData);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error creating group conversation:', error);
     throw error;
   }
 }
@@ -146,15 +183,21 @@ export function subscribeToUserConversations(
 
 // ================== MESSAGE OPERATIONS ==================
 
-export async function sendMessage(request: SendMessageRequest, senderId: string, senderName: string): Promise<string> {
+export async function sendMessage(
+  request: SendMessageRequest, 
+  senderId: string, 
+  senderName: string,
+  senderPhotoURL?: string | null
+): Promise<string> {
   try {
     const messageData: Partial<Message> = {
       conversationId: request.conversationId,
       senderId,
       senderName,
+      senderPhotoURL: senderPhotoURL || null,
       content: request.content,
       type: request.type,
-      timestamp: new Date().toISOString(),
+      timestamp: request.timestamp || new Date().toISOString(), // Use provided timestamp or create new one
       status: 'sent',
     };
 
@@ -257,6 +300,29 @@ export async function markConversationAsRead(
   }
 }
 
+/**
+ * Mark messages as read by adding the user to the readBy array
+ */
+export async function markMessagesAsRead(
+  messageIds: string[],
+  userId: string
+): Promise<void> {
+  try {
+    // Update all messages in parallel
+    await Promise.all(
+      messageIds.map((messageId) =>
+        updateDoc(doc(messagesCollection, messageId), {
+          readBy: arrayUnion(userId),
+          status: 'read',
+        })
+      )
+    );
+  } catch (error) {
+    console.error('Error marking messages as read:', error);
+    // Don't throw - read receipts are not critical
+  }
+}
+
 export async function deleteMessage(messageId: string): Promise<void> {
   try {
     await updateDoc(doc(messagesCollection, messageId), {
@@ -268,5 +334,73 @@ export async function deleteMessage(messageId: string): Promise<void> {
     console.error('Error deleting message:', error);
     throw error;
   }
+}
+
+// ================== TYPING STATUS ==================
+
+export async function updateTypingStatus(
+  conversationId: string,
+  userId: string,
+  userName: string,
+  isTyping: boolean
+): Promise<void> {
+  try {
+    const typingRef = doc(db, `conversations/${conversationId}/typing/${userId}`);
+    
+    if (isTyping) {
+      // Set typing status with timestamp
+      const typingData = {
+        userId,
+        userName,
+        timestamp: serverTimestamp(),
+        isTyping: true,
+      };
+      
+      // Use setDoc with merge to create or update
+      await setDoc(typingRef, typingData, { merge: true });
+    } else {
+      // Clear typing status
+      await deleteDoc(typingRef).catch(() => {
+        // Ignore error if document doesn't exist
+      });
+    }
+  } catch (error) {
+    console.error('Error updating typing status:', error);
+    // Don't throw - typing status is not critical
+  }
+}
+
+export function subscribeToTypingStatus(
+  conversationId: string,
+  currentUserId: string,
+  callback: (typingUsers: { userId: string; userName: string }[]) => void
+): () => void {
+  const typingCollection = collection(db, `conversations/${conversationId}/typing`);
+  
+  const unsubscribe = onSnapshot(typingCollection, (snapshot) => {
+    const typingUsers: { userId: string; userName: string }[] = [];
+    const now = Date.now();
+    
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      const userId = data.userId || doc.id;
+      
+      // Only include other users (not yourself)
+      if (userId !== currentUserId) {
+        const timestamp = data.timestamp?.toMillis?.() || 0;
+        // Only show if typing status is recent (within 5 seconds)
+        if (now - timestamp < 5000 && data.isTyping) {
+          typingUsers.push({
+            userId,
+            userName: data.userName || 'Someone',
+          });
+        }
+      }
+    });
+    
+    callback(typingUsers);
+  });
+  
+  return unsubscribe;
 }
 

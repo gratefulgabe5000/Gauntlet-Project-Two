@@ -7,7 +7,7 @@ import { db, auth } from '../../src/services/firebase/config';
 
 interface User {
   uid: string;
-  name: string;
+  displayName: string;
   email: string;
 }
 
@@ -130,11 +130,15 @@ export default function NewChatScreen() {
             >
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>
-                  {item.name.charAt(0).toUpperCase()}
+                  {(item.displayName && item.displayName.length > 0) 
+                    ? item.displayName.charAt(0).toUpperCase() 
+                    : (item.email && item.email.length > 0) 
+                      ? item.email.charAt(0).toUpperCase() 
+                      : '?'}
                 </Text>
               </View>
               <View style={styles.userInfo}>
-                <Text style={styles.userName}>{item.name}</Text>
+                <Text style={styles.userName}>{item.displayName || item.email || 'Unknown User'}</Text>
                 <Text style={styles.userEmail}>{item.email}</Text>
               </View>
             </TouchableOpacity>

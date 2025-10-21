@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import Avatar from '../shared/Avatar';
 import type { ConversationSummary } from '../../types/models';
 
 interface ConversationCardProps {
@@ -9,18 +10,27 @@ interface ConversationCardProps {
 
 export default function ConversationCard({ conversation, onPress }: ConversationCardProps) {
   const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
+    try {
+      const date = new Date(timestamp);
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return 'Recently';
+      }
+      
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m`;
-    if (diffHours < 24) return `${diffHours}h`;
-    if (diffDays < 7) return `${diffDays}d`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m`;
+      if (diffHours < 24) return `${diffHours}h`;
+      if (diffDays < 7) return `${diffDays}d`;
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } catch (error) {
+      return 'Recently';
+    }
   };
 
   const getDisplayName = () => {
@@ -30,26 +40,20 @@ export default function ConversationCard({ conversation, onPress }: Conversation
     // For direct chats, show the other participant's name
     const otherParticipant = conversation.participants?.[0];
     const participantName = otherParticipant?.displayName;
+    const participantEmail = otherParticipant?.email;
     const convName = conversation.name && conversation.name.trim() !== '' ? conversation.name : null;
-    return participantName || convName || 'Chat';
+    
+    // Return first available value: displayName > email > conversation name > fallback
+    return participantName || participantEmail || convName || 'Chat';
   };
 
-  const getAvatar = () => {
-    if (conversation.imageUrl) {
-      return (
-        <Image source={{ uri: conversation.imageUrl }} style={styles.avatar} />
-      );
-    }
-
-    const displayName = getDisplayName();
-    const initial = (displayName && displayName.length > 0) ? displayName.charAt(0).toUpperCase() : '?';
-    const avatarColor = conversation.type === 'ai' ? '#9333EA' : '#007AFF';
-
-    return (
-      <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
-        <Text style={styles.avatarText}>{initial}</Text>
-      </View>
-    );
+  const getPhotoURL = () => {
+    // For group chats, use conversation image
+    if (conversation.type === 'group') return conversation.imageUrl;
+    // For AI chats, no photo
+    if (conversation.type === 'ai') return null;
+    // For direct chats, use other participant's photo
+    return conversation.participants?.[0]?.photoURL || null;
   };
 
   return (
@@ -58,7 +62,11 @@ export default function ConversationCard({ conversation, onPress }: Conversation
       onPress={() => onPress(conversation.id)}
       activeOpacity={0.7}
     >
-      {getAvatar()}
+      <Avatar
+        photoURL={getPhotoURL()}
+        displayName={getDisplayName()}
+        size={56}
+      />
 
       <View style={styles.content}>
         <View style={styles.header}>
@@ -96,20 +104,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  avatarText: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#fff',
+    gap: 12,
   },
   content: {
     flex: 1,

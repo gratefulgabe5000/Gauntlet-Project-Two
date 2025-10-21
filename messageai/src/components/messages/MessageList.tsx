@@ -1,15 +1,17 @@
 import React, { useRef, useEffect } from 'react';
 import { FlatList, View, Text, StyleSheet } from 'react-native';
 import MessageBubble from './MessageBubble';
-import type { Message } from '../../types/models';
+import type { Message, Conversation } from '../../types/models';
 
 interface MessageListProps {
   messages: Message[];
   currentUserId: string;
   loading?: boolean;
+  onMessageLongPress?: (message: Message) => void;
+  conversation?: Conversation;
 }
 
-export default function MessageList({ messages, currentUserId, loading }: MessageListProps) {
+export default function MessageList({ messages, currentUserId, loading, onMessageLongPress, conversation }: MessageListProps) {
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -48,6 +50,8 @@ export default function MessageList({ messages, currentUserId, loading }: Messag
         <MessageBubble
           message={item}
           isOwn={item.senderId === currentUserId}
+          onLongPress={onMessageLongPress}
+          conversation={conversation}
         />
       )}
       contentContainerStyle={styles.listContent}
