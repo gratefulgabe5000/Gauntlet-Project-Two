@@ -108,10 +108,27 @@ export default function ConversationDetail() {
   useEffect(() => {
     if (!id || !auth.currentUser) return;
 
-    // Load conversation details
-    getConversation(id).then((conv) => {
+    // Load conversation details and populate participant data
+    getConversation(id).then(async (conv) => {
       if (conv) {
-        setConversation(conv);
+        // Fetch user data for each participant
+        const participantsWithData = await Promise.all(
+          (conv.participantIds || []).map(async (participantId) => {
+            try {
+              const userData = await getUser(participantId);
+              return userData || { uid: participantId, displayName: null, email: null, photoURL: null };
+            } catch (error) {
+              console.error(`Error fetching user ${participantId}:`, error);
+              return { uid: participantId, displayName: null, email: null, photoURL: null };
+            }
+          })
+        );
+
+        // Set conversation with populated participants
+        setConversation({
+          ...conv,
+          participants: participantsWithData,
+        });
       } else {
         Alert.alert('Error', 'Conversation not found');
         router.back();
@@ -231,9 +248,17 @@ export default function ConversationDetail() {
     
     if (sending) return;
 
-    // Fetch user's latest profile data from Firestore
-    const userData = await getUser(auth.currentUser.uid);
-    const senderPhotoURL = userData?.photoURL || null;
+    // Fetch user's latest profile data from Firestore (only if online)
+    let senderPhotoURL = null;
+    if (isOnline) {
+      try {
+        const userData = await getUser(auth.currentUser.uid);
+        senderPhotoURL = userData?.photoURL || null;
+      } catch (error) {
+        console.log('[Send] Could not fetch user data:', error);
+        // Continue with null photoURL - better to send message than fail
+      }
+    }
 
     // Create optimistic message immediately
     // Use timestamp + random for temp ID (React Native compatible)
@@ -296,9 +321,17 @@ export default function ConversationDetail() {
     
     if (sending) return;
 
-    // Fetch user's latest profile data from Firestore
-    const userData = await getUser(auth.currentUser.uid);
-    const senderPhotoURL = userData?.photoURL || null;
+    // Fetch user's latest profile data from Firestore (only if online)
+    let senderPhotoURL = null;
+    if (isOnline) {
+      try {
+        const userData = await getUser(auth.currentUser.uid);
+        senderPhotoURL = userData?.photoURL || null;
+      } catch (error) {
+        console.log('[Send Image] Could not fetch user data:', error);
+        // Continue with null photoURL - better to send message than fail
+      }
+    }
 
     // Create optimistic message with local image URI
     const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -408,7 +441,7 @@ export default function ConversationDetail() {
     const otherParticipant = conversation.participants?.find(
       (p) => p.uid !== auth.currentUser?.uid
     );
-    return otherParticipant?.displayName || 'Unknown';
+    return otherParticipant?.displayName || otherParticipant?.email || `User ${otherParticipant?.uid?.slice(0, 6) || ''}` || 'Unknown';
   };
 
   return (

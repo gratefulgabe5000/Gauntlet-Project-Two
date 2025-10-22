@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, BackHandler, Platform, ToastAndroid } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { auth, db } from '../../src/services/firebase/config';
 import { subscribeToUserConversations } from '../../src/services/firebase/firestore';
@@ -14,6 +14,9 @@ export default function Conversations() {
   const { isOnline } = useNetworkStatus();
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isScreenFocused, setIsScreenFocused] = useState(false);
+  const backPressCount = useRef(0);
+  const backPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -58,6 +61,58 @@ export default function Conversations() {
 
     return () => unsubscribe();
   }, []);
+
+  // Track when this screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      setIsScreenFocused(true);
+      return () => {
+        setIsScreenFocused(false);
+        backPressCount.current = 0; // Reset counter when leaving screen
+      };
+    }, [])
+  );
+
+  // Handle back button - require double press to exit (Android only)
+  // Only intercept when this screen is focused
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      // Only intercept if this screen is currently focused
+      if (!isScreenFocused) {
+        return false; // Allow default back behavior for other screens
+      }
+
+      backPressCount.current += 1;
+
+      if (backPressCount.current === 1) {
+        // First press - show toast and start timer
+        ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+        
+        // Reset counter after 2 seconds
+        backPressTimer.current = setTimeout(() => {
+          backPressCount.current = 0;
+        }, 2000);
+
+        return true; // Prevent default back behavior
+      } else {
+        // Second press within 2 seconds - allow exit
+        if (backPressTimer.current) {
+          clearTimeout(backPressTimer.current);
+        }
+        backPressCount.current = 0;
+        return false; // Allow default back behavior (exit)
+      }
+    });
+
+    return () => {
+      backHandler.remove();
+      if (backPressTimer.current) {
+        clearTimeout(backPressTimer.current);
+      }
+    };
+  }, [isScreenFocused]);
 
   const handleConversationPress = (conversationId: string) => {
     router.push(`/conversation/${conversationId}`);

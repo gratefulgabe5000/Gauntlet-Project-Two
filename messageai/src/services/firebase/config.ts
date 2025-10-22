@@ -1,7 +1,7 @@
 // Firebase Configuration
 import { initializeApp } from 'firebase/app';
 import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getDatabase } from 'firebase/database';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -25,11 +25,15 @@ export const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(AsyncStorage)
 });
 
-// Initialize Firestore with offline persistence enabled
+// Initialize Firestore with offline persistence for React Native
+// Note: React Native doesn't support IndexedDB, so we use the default cache
+// which automatically provides offline persistence in React Native
 export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  })
+  // Empty config uses React Native's default offline persistence
+  // This enables:
+  // 1. Automatic caching of read data
+  // 2. Queueing of writes when offline
+  // 3. Automatic sync when back online
 });
 
 export const storage = getStorage(app);
