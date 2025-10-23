@@ -140,3 +140,39 @@ export interface UpdateMessageRequest {
   status?: Message['status'];
 }
 
+// Phase 2.4: Action Item Extraction
+export interface ActionItem {
+  id: string;
+  conversationId: string;
+  
+  // Core action details
+  task: string; // Description of the action/task
+  assignee?: string; // Person responsible (name or "you", "me", etc.)
+  assigneeId?: string; // User ID if identifiable
+  
+  // Timing
+  deadline?: string; // ISO date string if deadline mentioned
+  createdAt: string; // When this action was extracted
+  
+  // Priority & Status
+  priority: 'high' | 'medium' | 'low' | 'unspecified';
+  status: 'pending' | 'completed' | 'cancelled';
+  completedAt?: string;
+  
+  // Context
+  sourceMessageId?: string; // The message this was extracted from
+  context?: string; // Brief context or quote from conversation
+  
+  // Metadata
+  extractedBy: 'ai'; // Who extracted this (always AI for now)
+  confidence?: number; // AI confidence score (0-1)
+}
+
+// Phase 2.4: Response from extractActions Cloud Function
+export interface ExtractActionsResponse {
+  actionItems: ActionItem[];
+  messageCount: number;
+  encryptedCount?: number;
+  timestamp: string;
+}
+

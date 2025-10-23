@@ -139,6 +139,12 @@ export const aiChat = functions.https.onCall(async (data, context) => {
 });
 
 /**
+ * Action Item Extraction function (Phase 2.4)
+ * Extracts tasks, deadlines, and assignments from conversations
+ */
+export { extractActions } from './ai/extractActions';
+
+/**
  * Thread Summarization function (Phase 2.3)
  * Summarizes conversation threads using AI
  */

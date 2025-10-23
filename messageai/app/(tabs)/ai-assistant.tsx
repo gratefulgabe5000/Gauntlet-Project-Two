@@ -19,10 +19,16 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { generateAIChatResponse, summarizeConversation } from '../../src/services/firebase/functions';
+import { 
+  generateAIChatResponse, 
+  summarizeConversation,
+  extractActionItems,
+  ActionItem,
+} from '../../src/services/firebase/functions';
 import { getConversation, getUser } from '../../src/services/firebase/firestore';
 import { auth } from '../../src/services/firebase/config';
 import Avatar from '../../src/components/shared/Avatar';
+import ActionItemsList from '../../src/components/ai/ActionItemsList';
 
 interface Participant {
   uid: string;
@@ -35,9 +41,10 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  type?: 'summary' | 'chat';
+  type?: 'summary' | 'chat' | 'actions';
   conversationId?: string;
   participants?: Participant[];
+  actionItems?: ActionItem[];
 }
 
 const AI_MESSAGES_KEY = '@ai_messages';
@@ -134,6 +141,59 @@ export default function AIAssistant() {
       }, 100);
     }
   }, [params.requestSummary, params.conversationId]);
+
+  // Handle incoming action extraction request from URL params
+  // Phase 2.4: Action Item Extraction
+  useEffect(() => {
+    if (params.requestActions === 'true' && params.conversationId && typeof params.conversationId === 'string') {
+      // Start loading and fetch action items
+      setIsLoading(true);
+      
+      const fetchActions = async () => {
+        try {
+          // Extract action items
+          const response = await extractActionItems({ conversationId: params.conversationId as string });
+          
+          // Create message with action items
+          const actionsMessage: ChatMessage = {
+            id: `actions_${Date.now()}`,
+            role: 'assistant',
+            content: `I found ${response.actionItems.length} action ${response.actionItems.length === 1 ? 'item' : 'items'} in this conversation${response.encryptedCount ? ` (${response.encryptedCount} encrypted messages were not analyzed)` : ''}.`,
+            timestamp: new Date(),
+            type: 'actions',
+            conversationId: params.conversationId as string,
+            actionItems: response.actionItems,
+          };
+          
+          setMessages((prev) => {
+            const updated = [...prev, actionsMessage];
+            saveMessages(updated);
+            return updated;
+          });
+        } catch (error) {
+          console.error('[AI Assistant] Failed to extract actions:', error);
+          
+          const errorMessage: ChatMessage = {
+            id: `error_${Date.now()}`,
+            role: 'assistant',
+            content: "I'm sorry, I couldn't extract action items from that conversation. Please try again.",
+            timestamp: new Date(),
+          };
+          
+          setMessages((prev) => [...prev, errorMessage]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchActions();
+
+      // Clear the params after processing
+      setTimeout(() => {
+        router.setParams({ requestActions: undefined, conversationId: undefined });
+      }, 100);
+    }
+  }, [params.requestActions, params.conversationId]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -248,6 +308,7 @@ export default function AIAssistant() {
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
     const isSummary = item.type === 'summary';
+    const isActions = item.type === 'actions';
 
     // Filter out current user from participants display
     const currentUserId = auth.currentUser?.uid;
@@ -259,12 +320,13 @@ export default function AIAssistant() {
           styles.messageBubble,
           isUser ? styles.userBubble : styles.aiBubble,
           isSummary && styles.summaryBubble,
+          isActions && styles.actionsBubble,
         ]}
       >
         {!isUser && (
           <View style={styles.messageHeader}>
             <Text style={styles.aiLabel}>
-              {isSummary ? '📊 Conversation Summary' : '🤖 AI Assistant'}
+              {isSummary ? '📊 Conversation Summary' : isActions ? '📋 Action Items' : '🤖 AI Assistant'}
             </Text>
             {isSummary && otherParticipants.length > 0 && (
               <View style={styles.participantsContainer}>
@@ -296,6 +358,14 @@ export default function AIAssistant() {
         >
           {item.content}
         </Text>
+        
+        {/* Display Action Items if present */}
+        {isActions && item.actionItems && item.actionItems.length > 0 && (
+          <View style={styles.actionItemsContainer}>
+            <ActionItemsList actionItems={item.actionItems} />
+          </View>
+        )}
+        
         <Text
           style={[
             styles.timestamp,
@@ -431,6 +501,17 @@ const styles = StyleSheet.create({
     borderColor: '#007AFF',
     borderWidth: 2,
     maxWidth: '90%',
+  },
+  actionsBubble: {
+    backgroundColor: '#FFF8F0',
+    borderColor: '#F59E0B',
+    borderWidth: 2,
+    maxWidth: '95%',
+  },
+  actionItemsContainer: {
+    marginTop: 12,
+    minHeight: 200,
+    maxHeight: 600,
   },
   messageHeader: {
     flexDirection: 'row',

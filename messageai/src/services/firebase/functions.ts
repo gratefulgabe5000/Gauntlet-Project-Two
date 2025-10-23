@@ -74,4 +74,42 @@ export async function summarizeConversation(request: SummarizeRequest): Promise<
   return data.summary;
 }
 
+/**
+ * Extract Action Items
+ * Phase 2.4: Action Item Extraction
+ */
+export interface ExtractActionsRequest {
+  conversationId: string;
+}
+
+export interface ActionItem {
+  id: string;
+  conversationId: string;
+  task: string;
+  assignee?: string;
+  assigneeId?: string;
+  deadline?: string;
+  createdAt: string;
+  priority: 'high' | 'medium' | 'low' | 'unspecified';
+  status: 'pending' | 'completed' | 'cancelled';
+  completedAt?: string;
+  context?: string;
+  extractedBy: 'ai';
+  confidence?: number;
+}
+
+export interface ExtractActionsResponse {
+  actionItems: ActionItem[];
+  messageCount: number;
+  encryptedCount?: number;
+  timestamp: string;
+}
+
+export async function extractActionItems(request: ExtractActionsRequest): Promise<ExtractActionsResponse> {
+  const extractActions = httpsCallable(functions, 'extractActions');
+  const result = await extractActions(request);
+  const data = result.data as ExtractActionsResponse;
+  return data;
+}
+
 
