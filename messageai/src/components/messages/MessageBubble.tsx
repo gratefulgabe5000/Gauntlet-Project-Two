@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import Avatar from '../shared/Avatar';
+import DocumentMessage from './DocumentMessage';
+import VoiceMessage from './VoiceMessage';
 import { formatMessageTimestamp } from '../../utils/formatting';
 import type { Message, Conversation } from '../../types/models';
 
@@ -68,7 +70,9 @@ export default function MessageBubble({ message, isOwn, onLongPress, conversatio
         ]}
       >
         {!isOwn && (
-          <Text style={styles.senderName}>{message.senderName}</Text>
+          <View style={styles.senderRow}>
+            <Text style={styles.senderName}>{message.senderName}</Text>
+          </View>
         )}
         
         <View style={[styles.bubble, isOwn ? styles.ownBubble : styles.otherBubble]}>
@@ -80,13 +84,34 @@ export default function MessageBubble({ message, isOwn, onLongPress, conversatio
               resizeMode="cover"
             />
           </TouchableOpacity>
+        ) : message.type === 'file' && message.mediaUrl && message.voiceDuration ? (
+          <VoiceMessage
+            audioUrl={message.mediaUrl}
+            duration={message.voiceDuration}
+            isSender={isOwn}
+          />
+        ) : message.type === 'file' && message.mediaUrl && message.documentName ? (
+          <DocumentMessage
+            documentUrl={message.mediaUrl}
+            documentName={message.documentName}
+            documentSize={message.documentSize}
+            documentType={message.documentType}
+            isSender={isOwn}
+          />
         ) : (
           <Text style={[styles.messageText, isOwn ? styles.ownText : styles.otherText]}>
-            {message.content}
+            {/* Handle failed decryption gracefully */}
+            {message.content.startsWith('[Encrypted Message') || 
+             (message.content.length > 50 && /^[A-Za-z0-9+/=]+$/.test(message.content))
+              ? '🔒 Encrypted Message' 
+              : message.content}
           </Text>
         )}
         
         <View style={styles.footer}>
+          {message.encrypted && (
+            <Text style={styles.encryptedIndicator}>🔒</Text>
+          )}
           <Text style={[styles.timestamp, isOwn ? styles.ownTimestamp : styles.otherTimestamp]}>
             {formatMessageTimestamp(message.timestamp)}
           </Text>
@@ -126,11 +151,20 @@ const styles = StyleSheet.create({
   otherContainer: {
     alignSelf: 'flex-start',
   },
+  senderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   senderName: {
     fontSize: 12,
     color: '#666',
     marginBottom: 2,
     marginLeft: 12,
+  },
+  encryptedIndicator: {
+    fontSize: 10,
+    marginRight: 2,
   },
   bubble: {
     borderRadius: 20,

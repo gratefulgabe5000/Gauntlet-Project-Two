@@ -201,8 +201,32 @@ export async function sendMessage(
       status: 'sent',
     };
 
+    // Add encryption fields if present (Phase 1B)
+    if (request.encrypted !== undefined) {
+      messageData.encrypted = request.encrypted;
+    }
+    if (request.encryptionVersion) {
+      messageData.encryptionVersion = request.encryptionVersion;
+    }
+
     if (request.mediaUrl) {
       messageData.mediaUrl = request.mediaUrl;
+    }
+
+    // Add document fields if present (Phase 1B)
+    if ((request as any).documentName) {
+      (messageData as any).documentName = (request as any).documentName;
+    }
+    if ((request as any).documentSize) {
+      (messageData as any).documentSize = (request as any).documentSize;
+    }
+    if ((request as any).documentType) {
+      (messageData as any).documentType = (request as any).documentType;
+    }
+
+    // Add voice message fields if present (Phase 1B)
+    if ((request as any).voiceDuration) {
+      (messageData as any).voiceDuration = (request as any).voiceDuration;
     }
 
     // Add message to messages collection

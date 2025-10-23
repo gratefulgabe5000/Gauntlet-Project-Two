@@ -5,6 +5,21 @@
   },
   "storage": {
     "rules": "messageai/storage.rules"
-  }
+  },
+  "functions": [
+    {
+      "source": "messageai/functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ]
+    }
+  ]
 }
 

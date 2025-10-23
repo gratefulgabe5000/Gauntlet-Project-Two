@@ -37,6 +37,18 @@ export interface Message {
   mediaType?: string;
   mediaSize?: number;
   
+  // Encryption
+  encrypted?: boolean; // True if message content is encrypted
+  encryptionVersion?: string; // For future migration (v1, v2, etc.)
+  
+  // Documents (Phase 1B)
+  documentName?: string;
+  documentSize?: number;
+  documentType?: string; // MIME type
+  
+  // Voice messages (Phase 1B)
+  voiceDuration?: number; // Duration in seconds
+  
   // Metadata
   edited?: boolean;
   editedAt?: string;
@@ -118,6 +130,8 @@ export interface SendMessageRequest {
   type: 'text' | 'image' | 'file';
   mediaUrl?: string;
   timestamp?: string; // Optional: preserve original timestamp for offline messages
+  encrypted?: boolean; // Phase 1B: indicates if content is encrypted
+  encryptionVersion?: string; // Phase 1B: encryption version (v1, v2, etc.)
 }
 
 export interface UpdateMessageRequest {

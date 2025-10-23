@@ -2,16 +2,28 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import { pickDocument, DocumentPickResult } from '../../services/document.service';
+import { startRecording, stopRecording, cancelRecording } from '../../services/audio.service';
 
-interface MessageInputProps {
-  onSend: (message: string) => void;
-  onSendImage?: (imageUri: string) => void;
-  onTyping?: (isTyping: boolean) => void;
-  disabled?: boolean;
+interface VoiceMessageData {
+  uri: string;
+  duration: number;
 }
 
-export default function MessageInput({ onSend, onSendImage, onTyping, disabled }: MessageInputProps) {
+interface MessageInputProps {
+  onSend: (message: string, isEncrypted?: boolean) => void;
+  onSendImage?: (imageUri: string) => void;
+  onSendDocument?: (document: DocumentPickResult) => void;
+  onSendVoice?: (voice: VoiceMessageData) => void;
+  onTyping?: (isTyping: boolean) => void;
+  disabled?: boolean;
+  showMediaButtons?: boolean;
+}
+
+export default function MessageInput({ onSend, onSendImage, onSendDocument, onSendVoice, onTyping, disabled, showMediaButtons = true }: MessageInputProps) {
   const [text, setText] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [encryptionEnabled, setEncryptionEnabled] = useState(false);
   const insets = useSafeAreaInsets();
   const isTypingRef = useRef(false);
 
@@ -24,8 +36,12 @@ export default function MessageInput({ onSend, onSendImage, onTyping, disabled }
       isTypingRef.current = false;
     }
     
-    onSend(text.trim());
+    onSend(text.trim(), encryptionEnabled);
     setText('');
+  };
+
+  const toggleEncryption = () => {
+    setEncryptionEnabled(prev => !prev);
   };
 
   const handleTextChange = (newText: string) => {
@@ -59,7 +75,7 @@ export default function MessageInput({ onSend, onSendImage, onTyping, disabled }
   const handlePickImage = async () => {
     try {
       // Request permissions
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
       if (status !== 'granted') {
         Alert.alert('Permission needed', 'Please grant camera roll permissions to send images');
@@ -82,6 +98,47 @@ export default function MessageInput({ onSend, onSendImage, onTyping, disabled }
     }
   };
 
+  const handlePickDocument = async () => {
+    try {
+      const document = await pickDocument();
+      if (document && onSendDocument) {
+        onSendDocument(document);
+      }
+    } catch (error) {
+      console.error('Error picking document:', error);
+      Alert.alert('Error', 'Failed to pick document');
+    }
+  };
+
+  const handleVoicePress = async () => {
+    if (isRecording) {
+      // Stop recording
+      try {
+        const result = await stopRecording();
+        setIsRecording(false);
+        if (result && onSendVoice) {
+          onSendVoice(result);
+        }
+      } catch (error) {
+        console.error('Error stopping recording:', error);
+        Alert.alert('Error', 'Failed to stop recording');
+      }
+    } else {
+      // Start recording
+      try {
+        const recording = await startRecording();
+        if (recording) {
+          setIsRecording(true);
+        } else {
+          Alert.alert('Permission needed', 'Please grant microphone permissions to record voice messages');
+        }
+      } catch (error) {
+        console.error('Error starting recording:', error);
+        Alert.alert('Error', 'Failed to start recording');
+      }
+    }
+  };
+
   const isDisabled = disabled || !text.trim();
 
   return (
@@ -89,7 +146,7 @@ export default function MessageInput({ onSend, onSendImage, onTyping, disabled }
       styles.container,
       { paddingBottom: Math.max(insets.bottom, 8) }
     ]}>
-      {onSendImage && (
+      {showMediaButtons && onSendImage && (
         <TouchableOpacity
           style={styles.imageButton}
           onPress={handlePickImage}
@@ -99,6 +156,43 @@ export default function MessageInput({ onSend, onSendImage, onTyping, disabled }
           <Text style={styles.imageButtonText}>📷</Text>
         </TouchableOpacity>
       )}
+
+      {showMediaButtons && onSendDocument && (
+        <TouchableOpacity
+          style={styles.imageButton}
+          onPress={handlePickDocument}
+          disabled={disabled}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.imageButtonText}>📎</Text>
+        </TouchableOpacity>
+      )}
+
+      {onSendVoice && (
+        <TouchableOpacity
+          style={[styles.imageButton, isRecording && styles.recordingButton]}
+          onPress={handleVoicePress}
+          disabled={disabled}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.imageButtonText}>{isRecording ? '⏹️' : '🎤'}</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Encryption Toggle */}
+      <TouchableOpacity
+        style={[
+          styles.encryptionButton,
+          encryptionEnabled && styles.encryptionButtonActive
+        ]}
+        onPress={toggleEncryption}
+        disabled={disabled}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.encryptionButtonText}>
+          {encryptionEnabled ? '🔒' : '🔓'}
+        </Text>
+      </TouchableOpacity>
       
       <TextInput
         style={styles.input}
@@ -170,7 +264,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  recordingButton: {
+    backgroundColor: '#FF3B30',
+  },
   imageButtonText: {
+    fontSize: 20,
+  },
+  encryptionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+  },
+  encryptionButtonActive: {
+    backgroundColor: '#E8F5E9',
+    borderColor: '#4CAF50',
+  },
+  encryptionButtonText: {
     fontSize: 20,
   },
 });
