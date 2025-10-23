@@ -145,6 +145,12 @@ export const aiChat = functions.https.onCall(async (data, context) => {
 export { extractActions } from './ai/extractActions';
 
 /**
+ * Smart Search function (Phase 2.5)
+ * AI-powered search across all user conversations
+ */
+export { search } from './ai/search';
+
+/**
  * Thread Summarization function (Phase 2.3)
  * Summarizes conversation threads using AI
  */

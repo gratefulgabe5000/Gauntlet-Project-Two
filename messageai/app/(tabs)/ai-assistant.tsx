@@ -24,11 +24,14 @@ import {
   summarizeConversation,
   extractActionItems,
   ActionItem,
+  searchMessages,
+  SearchResponse,
 } from '../../src/services/firebase/functions';
 import { getConversation, getUser } from '../../src/services/firebase/firestore';
 import { auth } from '../../src/services/firebase/config';
 import Avatar from '../../src/components/shared/Avatar';
 import ActionItemsList from '../../src/components/ai/ActionItemsList';
+import SearchResults from '../../src/components/ai/SearchResults';
 
 interface Participant {
   uid: string;
@@ -63,6 +66,12 @@ export default function AIAssistant() {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  
+  // Search state (Phase 2.5)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResponse | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   // Load messages from AsyncStorage on mount
   useEffect(() => {
@@ -305,6 +314,47 @@ export default function AIAssistant() {
     );
   };
 
+  // Handle Search (Phase 2.5)
+  const handleSearch = async () => {
+    if (!searchQuery.trim() || isSearching) return;
+
+    setIsSearching(true);
+    setShowSearchResults(false); // Hide old results while searching
+
+    try {
+      const results = await searchMessages({
+        query: searchQuery.trim(),
+        limit: 20,
+      });
+
+      setSearchResults(results);
+      setShowSearchResults(true);
+
+      console.log('[AI Assistant] Search completed', {
+        query: searchQuery,
+        resultsCount: results.totalFound,
+        expandedQuery: results.expandedQuery,
+      });
+    } catch (error) {
+      console.error('[AI Assistant] Search failed:', error);
+      
+      Alert.alert(
+        'Search Error',
+        'Could not search messages. Please check your internet connection and try again.'
+      );
+      
+      setShowSearchResults(false);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleBackToChat = () => {
+    setShowSearchResults(false);
+    setSearchQuery('');
+    setSearchResults(null);
+  };
+
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
     const isSummary = item.type === 'summary';
@@ -395,23 +445,65 @@ export default function AIAssistant() {
         <Text style={styles.headerSubtitle}>
           Powered by GPT-4o-mini
         </Text>
+        
+        {/* Search Input (Phase 2.5) */}
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search all messages..."
+            placeholderTextColor="#999"
+            editable={!isSearching}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+          />
+          <TouchableOpacity
+            style={[
+              styles.searchButton,
+              (!searchQuery.trim() || isSearching) && styles.searchButtonDisabled,
+            ]}
+            onPress={handleSearch}
+            disabled={!searchQuery.trim() || isSearching}
+          >
+            <Text style={styles.searchButtonText}>
+              {isSearching ? '⏳' : '🔍'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Chat Messages */}
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.messagesList}
-        showsVerticalScrollIndicator={false}
-        onContentSizeChange={() =>
-          flatListRef.current?.scrollToEnd({ animated: true })
-        }
-      />
+      {/* Back to Chat Button (when showing search results) */}
+      {showSearchResults && (
+        <TouchableOpacity style={styles.backButton} onPress={handleBackToChat}>
+          <Text style={styles.backButtonText}>← Back to Chat</Text>
+        </TouchableOpacity>
+      )}
 
-      {/* AI Typing Indicator */}
-      {isLoading && (
+      {/* Conditional Rendering: Search Results OR Chat Messages */}
+      {showSearchResults && searchResults ? (
+        <SearchResults
+          results={searchResults.results}
+          query={searchResults.query}
+          expandedQuery={searchResults.expandedQuery}
+          totalFound={searchResults.totalFound}
+        />
+      ) : (
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          renderItem={renderMessage}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.messagesList}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() =>
+            flatListRef.current?.scrollToEnd({ animated: true })
+          }
+        />
+      )}
+
+      {/* AI Typing Indicator (only show in chat mode) */}
+      {!showSearchResults && isLoading && (
         <View style={styles.typingContainer}>
           <View style={styles.typingBubble}>
             <View style={styles.typingDots}>
@@ -424,31 +516,33 @@ export default function AIAssistant() {
         </View>
       )}
 
-      {/* Input Area */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={inputText}
-          onChangeText={setInputText}
-          placeholder="Ask me anything..."
-          placeholderTextColor="#999"
-          multiline
-          maxLength={500}
-          editable={!isLoading}
-        />
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            (!inputText.trim() || isLoading) && styles.sendButtonDisabled,
-          ]}
-          onPress={handleSend}
-          disabled={!inputText.trim() || isLoading}
-        >
-          <Text style={styles.sendButtonText}>
-            {isLoading ? '⏳' : '➤'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      {/* Input Area (only show in chat mode) */}
+      {!showSearchResults && (
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder="Ask me anything..."
+            placeholderTextColor="#999"
+            multiline
+            maxLength={500}
+            editable={!isLoading}
+          />
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              (!inputText.trim() || isLoading) && styles.sendButtonDisabled,
+            ]}
+            onPress={handleSend}
+            disabled={!inputText.trim() || isLoading}
+          >
+            <Text style={styles.sendButtonText}>
+              {isLoading ? '⏳' : '➤'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -629,5 +723,49 @@ const styles = StyleSheet.create({
   sendButtonText: {
     fontSize: 20,
     color: '#fff',
+  },
+  // Search styles (Phase 2.5)
+  searchContainer: {
+    flexDirection: 'row',
+    marginTop: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 14,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  searchButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchButtonDisabled: {
+    backgroundColor: '#CCC',
+  },
+  searchButtonText: {
+    fontSize: 20,
+  },
+  backButton: {
+    backgroundColor: '#007AFF',
+    padding: 12,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

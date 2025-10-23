@@ -112,4 +112,39 @@ export async function extractActionItems(request: ExtractActionsRequest): Promis
   return data;
 }
 
+/**
+ * Search Messages
+ * Phase 2.5: Smart Search
+ */
+export interface SearchRequest {
+  query: string;
+  limit?: number; // Max results to return (default: 20)
+}
+
+export interface SearchResult {
+  messageId: string;
+  conversationId: string;
+  conversationName: string;
+  senderId: string;
+  senderName: string;
+  content: string;
+  timestamp: string;
+  relevanceScore?: number;
+}
+
+export interface SearchResponse {
+  results: SearchResult[];
+  totalFound: number;
+  query: string;
+  expandedQuery?: string; // AI-expanded search terms
+  timestamp: string;
+}
+
+export async function searchMessages(request: SearchRequest): Promise<SearchResponse> {
+  const searchCallable = httpsCallable(functions, 'search');
+  const result = await searchCallable(request);
+  const data = result.data as SearchResponse;
+  return data;
+}
+
 

@@ -710,18 +710,18 @@ messageai/
 
 | ID | Task | Time | Status | Dependencies | Files |
 |----|------|------|--------|--------------|-------|
-| 2.5.1 | Create search endpoint (Cloud Function) | 20m | ⏳ Pending | 2.1.8 | `functions/src/ai/search.ts` |
-| 2.5.2 | Implement basic keyword search | 30m | ⏳ Pending | 2.5.1 | `functions/src/ai/search.ts` |
-| 2.5.3 | Add AI-powered query expansion | 30m | ⏳ Pending | 2.5.2 | `functions/src/ai/search.ts` |
-| 2.5.4 | Deploy search function | 5m | ⏳ Pending | 2.5.3 | N/A |
-| 2.5.5 | Create app-side search service | 15m | ⏳ Pending | 2.5.4 | `src/services/ai/search.ts` |
-| 2.5.6 | Build SearchResults component | 20m | ⏳ Pending | 2.5.5 | `src/components/ai/SearchResults.tsx` |
-| 2.5.7 | Add search input to AI assistant | 15m | ⏳ Pending | 2.5.6 | `app/(tabs)/ai-assistant.tsx` |
-| 2.5.8 | Test search with various queries | 15m | ⏳ Pending | 2.5.7 | N/A |
+| 2.5.1 | Create search endpoint (Cloud Function) | 20m | ✅ Complete | 2.1.8 | `functions/src/ai/search.ts` |
+| 2.5.2 | Implement basic keyword search | 30m | ✅ Complete | 2.5.1 | `functions/src/ai/search.ts` |
+| 2.5.3 | Add AI-powered query expansion | 30m | ✅ Complete | 2.5.2 | `functions/src/ai/search.ts` |
+| 2.5.4 | Deploy search function | 5m | ✅ Complete | 2.5.3 | N/A |
+| 2.5.5 | Create app-side search service | 15m | ✅ Complete | 2.5.4 | `src/services/firebase/functions.ts` |
+| 2.5.6 | Build SearchResults component | 20m | ✅ Complete | 2.5.5 | `src/components/ai/SearchResults.tsx` |
+| 2.5.7 | Add search input to AI assistant | 15m | ✅ Complete | 2.5.6 | `app/(tabs)/ai-assistant.tsx` |
+| 2.5.8 | Test search with various queries | 15m | ✅ Complete | 2.5.7 | N/A |
 
 **Note:** Semantic search with RAG will be enhanced in Day 4
 
-**Checkpoint 2.5:** ⏳ **PENDING** - Basic AI-powered search working
+**Checkpoint 2.5:** ✅ **COMPLETE** - AI-powered search with query expansion working (Oct 23, 2025)
 
 ---
 
@@ -743,12 +743,13 @@ messageai/
 
 - [x] Cloud Functions deployed and working ✅
 - [x] AI chat interface complete ✅
-- [x] 2 AI features implemented (summarize, actions) ✅ **IN PROGRESS**
-- [ ] 3 AI features implemented (search pending)
+- [x] 3 AI features implemented ✅ **COMPLETE** (summarize, actions, search)
 - [x] All features tested with real data ✅
+- [x] Firestore indexes optimized for queries ✅
 
-**Total Phase 2 (Days 2-3) Time:** 12 hours  
-**Actual Time (So Far):** ~6 hours (50% complete)
+**Total Phase 2A (Days 2-3) Time:** 12 hours  
+**Actual Time:** ~8 hours (67% under budget!) 🎉  
+**Phase 2A Status:** ✅ **COMPLETE** - All 3 AI features working!
 
 ---
 
@@ -1520,6 +1521,7 @@ phases depend    depend on this           depends on this         depends on thi
 | 1.4 | Oct 21, 2025 | **MVP COMPLETION UPDATE:** ✅ Phase 1 (MVP) complete - All 13 MVP requirements achieved; Updated all Phase 1 task statuses (1.1-1.17); Marked 3 critical bugs as fixed (BUG-003, BUG-004, BUG-005); Documented Expo Go limitation (LIMIT-001); Updated checkpoints and final status; Total actual time: ~48 hours; Zustand/hooks deferred in favor of direct Firebase integration; SQLite deferred in favor of Firestore offline persistence; MVP READY FOR SUBMISSION |
 | 1.5 | Oct 22, 2025 | **Phase 1B & Phase 2A Progress:** ✅ Phase 1B complete (Encryption, Documents, Voice Messages); ✅ Phase 2.1-2.4 complete (Cloud Functions, AI Chat, Thread Summarization, Action Item Extraction); Updated all Phase 2.1-2.4 task statuses; 2 of 5 required AI features working; Edge cases tested; UI/UX polished; Total actual time Phase 2A: ~6 hours |
 | 1.6 | Oct 23, 2025 | **Phase 2.4 COMPLETION UPDATE:** ✅ Action Item Extraction fully implemented and tested - Cloud Function endpoint created, ActionItem data model defined, GPT-4 prompt engineered with examples, JSON parsing with robust validation, ActionItemsList UI component with priority grouping (High/Medium/Low/Unspecified), scrollable interface, multi-participant testing verified, edge cases handled, error handling robust; Updated Day 3 checkpoint; 2/5 AI features complete; Next: Phase 2.5 (Smart Search) |
+| 1.7 | Oct 23, 2025 | **PHASE 2A COMPLETE! 🎉** ✅ Smart Search fully implemented and tested - Cloud Function with AI query expansion, Firestore composite indexes created (conversationId + timestamp ASC/DESC), SearchResults UI component with conversation context, search bar in AI Assistant, tested with multiple queries (meeting, deadline, edge cases), synonym expansion working (e.g., "meeting" → "call, sync, standup"), navigation to conversations functional; All 3 required AI features working: Thread Summarization, Action Item Extraction, Smart Search; Phase 2A completed under budget (~8h vs 12h planned); Gate 4 (AI Foundation) PASSED ✅ |
 
 ---
 

@@ -193,6 +193,96 @@ export async function summarizeConversation(
 }
 
 /**
+ * Expand Search Query
+ * Phase 2.5: Smart Search - Query Expansion
+ * Takes a user's search query and expands it with synonyms, related terms, and variations
+ */
+export async function expandSearchQuery(query: string): Promise<{
+  expandedTerms: string[];
+  originalQuery: string;
+}> {
+  try {
+    const client = getOpenAIClient();
+
+    const response = await client.chat.completions.create({
+      model: OPENAI_MODELS.CHAT,
+      messages: [
+        {
+          role: 'system',
+          content: `You are a search query expansion assistant. Given a user's search query, generate semantically similar terms, synonyms, and related phrases that would help find relevant messages.
+
+INSTRUCTIONS:
+1. Generate 3-5 expanded search terms
+2. Include synonyms and related concepts  
+3. Consider common variations and spellings
+4. Keep terms relevant to messaging context
+5. Return ONLY the expanded terms, one per line
+
+EXAMPLES:
+Query: "meeting"
+Expanded terms:
+- meeting
+- call
+- sync
+- standup
+- discussion
+
+Query: "deadline"
+Expanded terms:
+- deadline
+- due date
+- timeline
+- schedule
+- delivery date
+
+Return ONLY the list of expanded terms, nothing else.`,
+        },
+        {
+          role: 'user',
+          content: `Expand this search query: "${query}"`,
+        },
+      ],
+      max_tokens: 150,
+      temperature: 0.5,
+    });
+
+    const content = response.choices[0]?.message?.content?.trim();
+
+    if (!content) {
+      functions.logger.warn('OpenAI returned empty response for query expansion');
+      return {
+        expandedTerms: [query.toLowerCase()],
+        originalQuery: query,
+      };
+    }
+
+    // Parse the expanded terms (one per line, remove bullet points and dashes)
+    const expandedTerms = content
+      .split('\n')
+      .map((line) => line.trim().replace(/^[-•*]\s*/, '').toLowerCase())
+      .filter((term) => term.length > 0);
+
+    functions.logger.info('Query expanded', {
+      originalQuery: query,
+      expandedTermsCount: expandedTerms.length,
+      tokensUsed: response.usage?.total_tokens,
+    });
+
+    return {
+      expandedTerms: expandedTerms.length > 0 ? expandedTerms : [query.toLowerCase()],
+      originalQuery: query,
+    };
+  } catch (error) {
+    functions.logger.error('Failed to expand search query', { error, query });
+    // Fallback to original query if AI fails
+    return {
+      expandedTerms: [query.toLowerCase()],
+      originalQuery: query,
+    };
+  }
+}
+
+/**
  * Extract action items from conversation
  * Phase 2.4: Action Item Extraction
  */
