@@ -9,12 +9,15 @@ import ConversationList from '../../src/components/conversations/ConversationLis
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import type { Conversation, ConversationSummary, User } from '../../src/types/models';
 
+type PriorityFilter = 'all' | 'urgent' | 'high' | 'normal' | 'low';
+
 export default function Conversations() {
   const router = useRouter();
   const { isOnline } = useNetworkStatus();
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [isScreenFocused, setIsScreenFocused] = useState(false);
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
   const backPressCount = useRef(0);
   const backPressTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -118,6 +121,13 @@ export default function Conversations() {
     router.push(`/conversation/${conversationId}`);
   };
 
+  // Filter conversations based on priority (Phase 3.1)
+  const filteredConversations = conversations.filter(conv => {
+    if (priorityFilter === 'all') return true;
+    if (!conv.lastMessage?.priority) return priorityFilter === 'normal'; // No priority = normal
+    return conv.lastMessage.priority === priorityFilter;
+  });
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
@@ -150,9 +160,53 @@ export default function Conversations() {
         </View>
       </View>
 
+      {/* Priority Filter Chips (Phase 3.1) */}
+      <View style={styles.filterContainer}>
+        <TouchableOpacity
+          style={[styles.filterChip, priorityFilter === 'all' && styles.filterChipActive]}
+          onPress={() => setPriorityFilter('all')}
+        >
+          <Text style={[styles.filterChipText, priorityFilter === 'all' && styles.filterChipTextActive]}>
+            All
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterChip, priorityFilter === 'urgent' && styles.filterChipActive, styles.filterChipUrgent]}
+          onPress={() => setPriorityFilter('urgent')}
+        >
+          <Text style={[styles.filterChipText, priorityFilter === 'urgent' && styles.filterChipTextActive]}>
+            🚨 Urgent
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterChip, priorityFilter === 'high' && styles.filterChipActive, styles.filterChipHigh]}
+          onPress={() => setPriorityFilter('high')}
+        >
+          <Text style={[styles.filterChipText, priorityFilter === 'high' && styles.filterChipTextActive]}>
+            ⚠️ High
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterChip, priorityFilter === 'normal' && styles.filterChipActive]}
+          onPress={() => setPriorityFilter('normal')}
+        >
+          <Text style={[styles.filterChipText, priorityFilter === 'normal' && styles.filterChipTextActive]}>
+            Normal
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterChip, priorityFilter === 'low' && styles.filterChipActive, styles.filterChipLow]}
+          onPress={() => setPriorityFilter('low')}
+        >
+          <Text style={[styles.filterChipText, priorityFilter === 'low' && styles.filterChipTextActive]}>
+            📌 Low
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Conversation List */}
       <ConversationList
-        conversations={conversations}
+        conversations={filteredConversations}
         onConversationPress={handleConversationPress}
         loading={loading}
       />
@@ -218,6 +272,46 @@ const styles = StyleSheet.create({
   offlineBannerText: {
     color: '#fff',
     fontSize: 13,
+    fontWeight: '600',
+  },
+  // Priority filter styles (Phase 3.1)
+  filterContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#F8F8F8',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#D0D0D0',
+  },
+  filterChipActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  filterChipUrgent: {
+    // Will have red border when active
+  },
+  filterChipHigh: {
+    // Will have orange border when active
+  },
+  filterChipLow: {
+    // Will have green border when active
+  },
+  filterChipText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#666',
+  },
+  filterChipTextActive: {
+    color: '#fff',
     fontWeight: '600',
   },
 });

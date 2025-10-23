@@ -283,6 +283,140 @@ Return ONLY the list of expanded terms, nothing else.`,
 }
 
 /**
+ * Detect message priority level
+ * Phase 3.1: Priority Message Detection
+ */
+export async function detectMessagePriority(
+  messageContent: string
+): Promise<{
+  priority: 'urgent' | 'high' | 'normal' | 'low';
+  confidence: number;
+  reasoning: string;
+}> {
+  try {
+    const client = getOpenAIClient();
+
+    // Generate priority detection with structured output
+    const response = await client.chat.completions.create({
+      model: OPENAI_MODELS.CHAT,
+      messages: [
+        {
+          role: 'system',
+          content:
+            `You are a priority detection assistant for a messaging app. Analyze messages and determine their urgency level.
+
+PRIORITY LEVELS:
+1. URGENT: Emergency situations, critical issues requiring immediate action
+   - Keywords: "emergency", "critical", "ASAP", "911", "help!", "urgent", "now", "immediately"
+   - Examples: "Server is down!", "Emergency meeting in 5 min", "Critical bug in production"
+
+2. HIGH: Important matters with near-term deadlines or significant impact
+   - Keywords: "important", "deadline today", "need soon", "please prioritize", "time-sensitive"
+   - Examples: "Can you review this by end of day?", "Important client call tomorrow", "Deadline approaching"
+
+3. NORMAL: Regular business communication, standard requests
+   - Keywords: "please", "when you can", "this week", "update", "question"
+   - Examples: "Quick question about the project", "Can we meet this week?", "Status update"
+
+4. LOW: FYI messages, casual conversations, optional information
+   - Keywords: "fyi", "just so you know", "no rush", "whenever", "optional", "btw"
+   - Examples: "FYI - new docs are up", "Check this out when you have time", "Random thought..."
+
+INSTRUCTIONS:
+1. Read the message carefully
+2. Consider urgency indicators: time constraints, emotional tone, explicit requests
+3. Assign one priority level: urgent, high, normal, or low
+4. Provide confidence score (0.0-1.0) based on clarity of urgency signals
+5. Explain your reasoning briefly (1-2 sentences)
+
+RETURN FORMAT:
+Return a JSON object with:
+- priority (string, required): "urgent", "high", "normal", or "low"
+- confidence (number, required): 0.0 to 1.0
+- reasoning (string, required): Brief explanation of priority assignment
+
+Example response:
+{
+  "priority": "high",
+  "confidence": 0.9,
+  "reasoning": "Message contains time-sensitive deadline (end of day) and uses 'important' keyword."
+}
+
+Return ONLY valid JSON object, no markdown formatting, no explanations.`,
+        },
+        {
+          role: 'user',
+          content: `Detect priority for this message: "${messageContent}"`,
+        },
+      ],
+      max_tokens: 200,
+      temperature: 0.3, // Lower temperature for consistent classification
+      response_format: { type: 'json_object' },
+    });
+
+    const content = response.choices[0]?.message?.content?.trim();
+
+    if (!content) {
+      functions.logger.error('OpenAI returned empty response for priority detection');
+      // Default fallback
+      return {
+        priority: 'normal',
+        confidence: 0.5,
+        reasoning: 'Unable to analyze message priority',
+      };
+    }
+
+    // Parse JSON response
+    let parsedResponse: any;
+    try {
+      parsedResponse = JSON.parse(content);
+    } catch (parseError) {
+      functions.logger.error('Failed to parse priority detection JSON', {
+        content,
+        parseError: parseError instanceof Error ? parseError.message : 'Unknown error',
+      });
+      // Default fallback
+      return {
+        priority: 'normal',
+        confidence: 0.5,
+        reasoning: 'Failed to parse AI response',
+      };
+    }
+
+    // Validate and normalize response
+    const priority = ['urgent', 'high', 'normal', 'low'].includes(parsedResponse.priority)
+      ? parsedResponse.priority
+      : 'normal';
+    const confidence = typeof parsedResponse.confidence === 'number' 
+      ? Math.max(0, Math.min(1, parsedResponse.confidence))
+      : 0.5;
+    const reasoning = parsedResponse.reasoning 
+      ? String(parsedResponse.reasoning)
+      : 'No reasoning provided';
+
+    functions.logger.info('Message priority detected', {
+      priority,
+      confidence,
+      tokensUsed: response.usage?.total_tokens,
+    });
+
+    return {
+      priority,
+      confidence,
+      reasoning,
+    };
+  } catch (error) {
+    functions.logger.error('Failed to detect message priority', { error });
+    // Default fallback on error
+    return {
+      priority: 'normal',
+      confidence: 0.5,
+      reasoning: 'Error during priority detection',
+    };
+  }
+}
+
+/**
  * Extract action items from conversation
  * Phase 2.4: Action Item Extraction
  */

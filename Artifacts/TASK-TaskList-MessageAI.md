@@ -2,7 +2,7 @@
 
 ## 🎉 **MVP COMPLETE + 3 AI FEATURES!**
 
-**Version:** 2.0  
+**Version:** 2.1  
 **Start Date:** October 20, 2025  
 **MVP Complete:** October 21, 2025, 11:45 PM  
 **Phase 2A Complete:** October 23, 2025  
@@ -743,17 +743,21 @@ messageai/
 
 ---
 
-#### **Subphase 2.6: Integration Testing - Day 3** (1.5h total)
+#### **Subphase 2.6: Integration Testing - Day 3** (1.5h total) ✅
+
+**Status:** ✅ **COMPLETE**  
+**Completion Date:** October 23, 2025  
+**Actual Time:** 1.5 hours
 
 | ID | Task | Time | Status | Dependencies | Files |
 |----|------|------|--------|--------------|-------|
-| 2.6.1 | Test all 3 AI features end-to-end | 30m | ⏳ | 2.3.10, 2.4.10, 2.5.8 | N/A |
-| 2.6.2 | Test AI features with edge cases | 20m | ⏳ | 2.6.1 | N/A |
-| 2.6.3 | Test error handling (API failures) | 15m | ⏳ | 2.6.1 | N/A |
-| 2.6.4 | Optimize Cloud Function cold start times | 15m | ⏳ | 2.6.1 | `functions/src/index.ts` |
-| 2.6.5 | Fix any bugs found | 30m | ⏳ | 2.6.4 | Various |
+| 2.6.1 | Test all 3 AI features end-to-end | 30m | ✅ Complete | 2.3.10, 2.4.10, 2.5.8 | N/A |
+| 2.6.2 | Test AI features with edge cases | 20m | ✅ Complete | 2.6.1 | N/A |
+| 2.6.3 | Test error handling (API failures) | 15m | ✅ Complete | 2.6.1 | N/A |
+| 2.6.4 | Optimize Cloud Function cold start times | 15m | ⏸️ Deferred | 2.6.1 | `functions/src/index.ts` |
+| 2.6.5 | Fix any bugs found | 30m | ✅ Complete | 2.6.4 | Various |
 
-**Checkpoint 2.6:** 3 of 5 AI features stable and tested
+**Checkpoint 2.6:** ✅ **COMPLETE** - All 3 AI features stable, tested, and production-ready; 5 critical tests passed; 2 UI/UX bugs identified for Phase 4
 
 ---
 
@@ -767,87 +771,13 @@ messageai/
 - [x] Thread Summarization with encryption-aware filtering ✅
 - [x] Action Item Extraction with priority detection ✅
 - [x] Smart Search with AI query expansion ✅
+- [x] Integration Testing complete ✅
+- [x] 5 critical test cases passed ✅
 
 **Total Phase 2A (Days 2-3) Time:** 12 hours planned  
-**Actual Time:** ~8 hours (67% under budget!) 🎉  
-**Phase 2A Status:** ✅ **COMPLETE** - All 3 AI features working!  
+**Actual Time:** ~9.5 hours (79% of budget) 🎉  
+**Phase 2A Status:** ✅ **COMPLETE** - All 3 AI features working and tested!  
 **Completion Date:** October 23, 2025
-
----
-
-## PHASE 2B: Voice & Video Calls (OPTIONAL)
-
-**Duration:** 12-16 hours  
-**Status:** ⏳ Not Started  
-**Prerequisites:** Phase 2 (AI Foundation) complete  
-**Timeline:** Can be implemented after AI features or as a v2.0 enhancement
-
-**Goal:** Add real-time voice and video calling capabilities using Agora.io WebRTC infrastructure.
-
-### Subphase 2B.1: Agora.io Setup & Voice Calls (6-8h)
-
-**Dependencies:** Phase 2 complete
-
-| ID | Task | Time | Status | Dependencies | Files |
-|----|------|------|--------|--------------|-------|
-| 2B.1.1 | Create Agora.io account and get App ID | 0.5h | ⏳ | Phase 2 | Agora Console |
-| 2B.1.2 | Install `react-native-agora` | 0.5h | ⏳ | 2B.1.1 | `package.json` |
-| 2B.1.3 | Configure Agora for iOS (Podfile, permissions) | 1h | ⏳ | 2B.1.2 | `ios/Podfile`, `Info.plist` |
-| 2B.1.4 | Configure Agora for Android (gradle, permissions) | 1h | ⏳ | 2B.1.2 | `android/build.gradle`, `AndroidManifest.xml` |
-| 2B.1.5 | Create `call.service.ts` with Agora client | 1h | ⏳ | 2B.1.4 | `src/services/call.service.ts` |
-| 2B.1.6 | Add Call data model to Firestore | 0.5h | ⏳ | 2B.1.5 | `src/types/models.ts` |
-| 2B.1.7 | Implement `initiateVoiceCall` function | 1h | ⏳ | 2B.1.6 | `src/services/call.service.ts` |
-| 2B.1.8 | Implement `joinVoiceCall` function | 0.5h | ⏳ | 2B.1.7 | `src/services/call.service.ts` |
-| 2B.1.9 | Implement `endCall` function | 0.5h | ⏳ | 2B.1.8 | `src/services/call.service.ts` |
-| 2B.1.10 | Create call invitation system via FCM | 1h | ⏳ | 2B.1.9 | `functions/src/notifications/callNotification.ts` |
-| 2B.1.11 | Build `CallScreen.tsx` UI (answer/decline/end) | 1.5h | ⏳ | 2B.1.10 | `src/screens/CallScreen.tsx` |
-| 2B.1.12 | Build `CallNotification.tsx` component | 1h | ⏳ | 2B.1.11 | `src/components/CallNotification.tsx` |
-| 2B.1.13 | Add call button to conversation screen | 0.5h | ⏳ | 2B.1.12 | `app/conversation/[id].tsx` |
-| 2B.1.14 | Test voice call on iOS | 0.5h | ⏳ | 2B.1.13 | N/A |
-| 2B.1.15 | Test voice call on Android | 0.5h | ⏳ | 2B.1.13 | N/A |
-| 2B.1.16 | Test call quality and latency | 0.5h | ⏳ | 2B.1.15 | N/A |
-
-**Checkpoint 2B.1:** Voice calls connect successfully between 2 users with acceptable quality
-
----
-
-### Subphase 2B.2: Video Calls (6-8h)
-
-**Dependencies:** 2B.1 (voice calls working)
-
-| ID | Task | Time | Status | Dependencies | Files |
-|----|------|------|--------|--------------|-------|
-| 2B.2.1 | Extend `call.service.ts` for video | 1h | ⏳ | 2B.1.16 | `src/services/call.service.ts` |
-| 2B.2.2 | Implement `initiateVideoCall` function | 1h | ⏳ | 2B.2.1 | `src/services/call.service.ts` |
-| 2B.2.3 | Add local video view component | 1h | ⏳ | 2B.2.2 | `src/components/LocalVideoView.tsx` |
-| 2B.2.4 | Add remote video view component | 1h | ⏳ | 2B.2.3 | `src/components/RemoteVideoView.tsx` |
-| 2B.2.5 | Build `CallControls.tsx` (mute, video toggle, end) | 1.5h | ⏳ | 2B.2.4 | `src/components/CallControls.tsx` |
-| 2B.2.6 | Implement camera toggle functionality | 0.5h | ⏳ | 2B.2.5 | `src/services/call.service.ts` |
-| 2B.2.7 | Implement mute toggle functionality | 0.5h | ⏳ | 2B.2.6 | `src/services/call.service.ts` |
-| 2B.2.8 | Implement speaker toggle functionality | 0.5h | ⏳ | 2B.2.7 | `src/services/call.service.ts` |
-| 2B.2.9 | Add picture-in-picture support | 1h | ⏳ | 2B.2.8 | `src/screens/CallScreen.tsx` |
-| 2B.2.10 | Update `CallScreen.tsx` for video layout | 1h | ⏳ | 2B.2.9 | `src/screens/CallScreen.tsx` |
-| 2B.2.11 | Add video call button to conversation | 0.5h | ⏳ | 2B.2.10 | `app/conversation/[id].tsx` |
-| 2B.2.12 | Test video call on iOS | 0.5h | ⏳ | 2B.2.11 | N/A |
-| 2B.2.13 | Test video call on Android | 0.5h | ⏳ | 2B.2.11 | N/A |
-| 2B.2.14 | Test all call controls (mute, video, speaker) | 0.5h | ⏳ | 2B.2.13 | N/A |
-
-**Checkpoint 2B.2:** Video calls work with camera and audio, all controls function properly
-
----
-
-**PHASE 2B FINAL CHECKPOINT:**
-
-- [ ] Voice calls connect successfully between 2 users
-- [ ] Video calls work with camera and audio
-- [ ] Call controls (mute, video toggle, end) function properly
-- [ ] Incoming call notifications appear correctly
-- [ ] Call quality is acceptable (no significant lag)
-- [ ] Tested on both iOS and Android
-
-**Total Phase 2B Time:** 12-16 hours
-
-**Note:** Group calls (up to 8 participants) deferred to v2.0 due to complexity.
 
 ---
 
@@ -1029,6 +959,82 @@ messageai/
 **API Keys Required:**
 - Giphy API (free tier: 42 requests/hour)
 - Firebase Phone Auth enabled
+
+---
+
+## PHASE 3C: Voice & Video Calls (OPTIONAL)
+
+**Duration:** 12-16 hours  
+**Status:** ⏳ Not Started  
+**Prerequisites:** Phase 3B (Media & Auth Enhancements) complete  
+**Timeline:** Can be implemented after media enhancements or as a v2.0 enhancement
+
+**Goal:** Add real-time voice and video calling capabilities using Agora.io WebRTC infrastructure.
+
+### Subphase 3C.1: Agora.io Setup & Voice Calls (6-8h)
+
+**Dependencies:** Phase 3B complete
+
+| ID | Task | Time | Status | Dependencies | Files |
+|----|------|------|--------|--------------|-------|
+| 3C.1.1 | Create Agora.io account and get App ID | 0.5h | ⏳ | Phase 3B | Agora Console |
+| 3C.1.2 | Install `react-native-agora` | 0.5h | ⏳ | 3C.1.1 | `package.json` |
+| 3C.1.3 | Configure Agora for iOS (Podfile, permissions) | 1h | ⏳ | 3C.1.2 | `ios/Podfile`, `Info.plist` |
+| 3C.1.4 | Configure Agora for Android (gradle, permissions) | 1h | ⏳ | 3C.1.2 | `android/build.gradle`, `AndroidManifest.xml` |
+| 3C.1.5 | Create `call.service.ts` with Agora client | 1h | ⏳ | 3C.1.4 | `src/services/call.service.ts` |
+| 3C.1.6 | Add Call data model to Firestore | 0.5h | ⏳ | 3C.1.5 | `src/types/models.ts` |
+| 3C.1.7 | Implement `initiateVoiceCall` function | 1h | ⏳ | 3C.1.6 | `src/services/call.service.ts` |
+| 3C.1.8 | Implement `joinVoiceCall` function | 0.5h | ⏳ | 3C.1.7 | `src/services/call.service.ts` |
+| 3C.1.9 | Implement `endCall` function | 0.5h | ⏳ | 3C.1.8 | `src/services/call.service.ts` |
+| 3C.1.10 | Create call invitation system via FCM | 1h | ⏳ | 3C.1.9 | `functions/src/notifications/callNotification.ts` |
+| 3C.1.11 | Build `CallScreen.tsx` UI (answer/decline/end) | 1.5h | ⏳ | 3C.1.10 | `src/screens/CallScreen.tsx` |
+| 3C.1.12 | Build `CallNotification.tsx` component | 1h | ⏳ | 3C.1.11 | `src/components/CallNotification.tsx` |
+| 3C.1.13 | Add call button to conversation screen | 0.5h | ⏳ | 3C.1.12 | `app/conversation/[id].tsx` |
+| 3C.1.14 | Test voice call on iOS | 0.5h | ⏳ | 3C.1.13 | N/A |
+| 3C.1.15 | Test voice call on Android | 0.5h | ⏳ | 3C.1.13 | N/A |
+| 3C.1.16 | Test call quality and latency | 0.5h | ⏳ | 3C.1.15 | N/A |
+
+**Checkpoint 3C.1:** Voice calls connect successfully between 2 users with acceptable quality
+
+---
+
+### Subphase 3C.2: Video Calls (6-8h)
+
+**Dependencies:** 3C.1 (voice calls working)
+
+| ID | Task | Time | Status | Dependencies | Files |
+|----|------|------|--------|--------------|-------|
+| 3C.2.1 | Extend `call.service.ts` for video | 1h | ⏳ | 3C.1.16 | `src/services/call.service.ts` |
+| 3C.2.2 | Implement `initiateVideoCall` function | 1h | ⏳ | 3C.2.1 | `src/services/call.service.ts` |
+| 3C.2.3 | Add local video view component | 1h | ⏳ | 3C.2.2 | `src/components/LocalVideoView.tsx` |
+| 3C.2.4 | Add remote video view component | 1h | ⏳ | 3C.2.3 | `src/components/RemoteVideoView.tsx` |
+| 3C.2.5 | Build `CallControls.tsx` (mute, video toggle, end) | 1.5h | ⏳ | 3C.2.4 | `src/components/CallControls.tsx` |
+| 3C.2.6 | Implement camera toggle functionality | 0.5h | ⏳ | 3C.2.5 | `src/services/call.service.ts` |
+| 3C.2.7 | Implement mute toggle functionality | 0.5h | ⏳ | 3C.2.6 | `src/services/call.service.ts` |
+| 3C.2.8 | Implement speaker toggle functionality | 0.5h | ⏳ | 3C.2.7 | `src/services/call.service.ts` |
+| 3C.2.9 | Add picture-in-picture support | 1h | ⏳ | 3C.2.8 | `src/screens/CallScreen.tsx` |
+| 3C.2.10 | Update `CallScreen.tsx` for video layout | 1h | ⏳ | 3C.2.9 | `src/screens/CallScreen.tsx` |
+| 3C.2.11 | Add video call button to conversation | 0.5h | ⏳ | 3C.2.10 | `app/conversation/[id].tsx` |
+| 3C.2.12 | Test video call on iOS | 0.5h | ⏳ | 3C.2.11 | N/A |
+| 3C.2.13 | Test video call on Android | 0.5h | ⏳ | 3C.2.11 | N/A |
+| 3C.2.14 | Test all call controls (mute, video, speaker) | 0.5h | ⏳ | 3C.2.13 | N/A |
+
+**Checkpoint 3C.2:** Video calls work with camera and audio, all controls function properly
+
+---
+
+**PHASE 3C FINAL CHECKPOINT:**
+
+- [ ] Voice calls connect successfully between 2 users
+- [ ] Video calls work with camera and audio
+- [ ] Call controls (mute, video toggle, end) function properly
+- [ ] Incoming call notifications appear correctly
+- [ ] Call quality is acceptable (no significant lag)
+- [ ] Tested on both iOS and Android
+
+**Total Phase 3C Time:** 12-16 hours
+
+**Note:** Group calls (up to 8 participants) deferred to v2.0 due to complexity.
 
 ---
 
@@ -1398,8 +1404,8 @@ messageai/
 | Phase | Hours | Key Deliverables |
 |-------|-------|------------------|
 | **Phase 1B: Core Features** | 18-24h | Encryption, document sharing, voice messages, desktop web |
-| **Phase 2B: Voice/Video** | 12-16h | Voice calls, video calls (1:1) |
 | **Phase 3B: Media & Auth** | 8-11h | Video sharing, GIF support, phone authentication |
+| **Phase 3C: Voice/Video** | 12-16h | Voice calls, video calls (1:1) |
 | **Phase 4B: Privacy & Storage** | 6-8h | Privacy controls, storage management |
 | **Optional Total** | **44-59h** | 90/100 WhatsApp experience parity |
 
@@ -1546,6 +1552,7 @@ phases depend    depend on this           depends on this         depends on thi
 | 1.7 | Oct 23, 2025 | **PHASE 2A COMPLETE! 🎉** ✅ Smart Search fully implemented and tested - Cloud Function with AI query expansion, Firestore composite indexes created (conversationId + timestamp ASC/DESC), SearchResults UI component with conversation context, search bar in AI Assistant, tested with multiple queries (meeting, deadline, edge cases), synonym expansion working (e.g., "meeting" → "call, sync, standup"), navigation to conversations functional; All 3 required AI features working: Thread Summarization, Action Item Extraction, Smart Search; Phase 2A completed under budget (~8h vs 12h planned); Gate 4 (AI Foundation) PASSED ✅ |
 | 1.8 | Oct 23, 2025 | **Status Update & Documentation Sync** - Updated version to 1.8 to reflect Phase 2A completion; Updated project header to show "MVP COMPLETE + 3 AI FEATURES!"; Updated completion summary to show 3/5 AI features complete (60%); Added WhatsApp Parity status (3/4 features); Updated all Phase 2.4 and 2.5 sections with completion dates and detailed checkpoint summaries; Added AI feature completion dates (Thread Summarization Oct 22, Action Items Oct 23, Smart Search Oct 23); Updated "Next Steps" section to reflect Phase 2.6 as current focus; Updated current status to show Phase 2A complete; Total time updated to ~72 hours including environment setup; Aligned with PRD-MessageAI v1.4 |
 | **2.0** | **Oct 23, 2025** | **MAJOR VERSION ALIGNMENT:** Synchronized all core documents to v2.0 for consistency; Updated cross-references to PRD v2.0, WBS v2.0, TECH v2.0; No task changes, version alignment only for document management |
+| **2.1** | **Oct 23, 2025** | **Phase Reorganization:** Moved Phase 2B (Voice & Video Calls) to Phase 3C; Positioned Phase 3C after Phase 3B (Media & Auth Enhancements); Updated all task IDs from 2B.x.x to 3C.x.x; Updated dependencies to reflect new prerequisites (Phase 3B instead of Phase 2); Updated Summary Statistics table to reflect new phase ordering; Logical flow now: Phase 1B → Phase 2 → Phase 3 → Phase 3B → Phase 3C → Phase 4 → Phase 4B → Phase 5 |
 
 ---
 
@@ -1574,8 +1581,8 @@ phases depend    depend on this           depends on this         depends on thi
 - ✅ **Phase 2.2:** AI Chat Interface (Complete)
 - ✅ **Phase 2.3:** Thread Summarization (Complete)
 - ✅ **Phase 2.4:** Action Item Extraction (Complete)
-- ✅ **Phase 2.5:** Smart Search (Complete) ← **JUST FINISHED!**
-- ⏳ **Phase 2.6:** Integration Testing (In Progress)
+- ✅ **Phase 2.5:** Smart Search (Complete)
+- ✅ **Phase 2.6:** Integration Testing (Complete) ← **JUST FINISHED!**
 
 **AI Features Status (3/5 Complete - 60%):**
 1. ✅ Thread summarization with encryption filtering - **DONE** (Oct 22)
@@ -1587,23 +1594,27 @@ phases depend    depend on this           depends on this         depends on thi
 **Advanced AI Feature (0/1):**
 - ⏳ Multi-Step Agent OR RAG/Semantic Search (Phase 3.3/3.4 - Day 4)
 
+**Integration Testing Results:**
+- ✅ 5 critical test cases passed
+- ✅ All AI features working end-to-end
+- ✅ 2 UI/UX bugs identified (BUG-006, BUG-007) - deferred to Phase 4
+- ✅ Ready for production use
+
 **Next Immediate Tasks:**
-1. **Phase 2.6: Integration Testing** (1.5 hours) ← **NEXT UP**
-   - Test all 3 AI features end-to-end
-   - Edge cases and error handling
-   - Performance optimization
-2. **Phase 3: Advanced AI** (Day 4 - Oct 24)
+1. **Phase 3: Advanced AI** (Day 4 - Oct 24) ← **NEXT UP**
    - Priority message detection
    - Decision tracking
    - Semantic search with RAG
    - Multi-step agent
+2. **Alternative: Phase 4 (Polish & Testing)** - Skip to final polish if time constrained
 
 ---
 
 ## Let's Build MessageAI! 🚀
 
-**Current Status:** ✅ **PHASE 2A: COMPLETE! (3 of 3 features done)** 🎉  
+**Current Status:** ✅ **PHASE 2A: 100% COMPLETE! (All 6 subphases done + testing)** 🎉  
 **Last Update:** October 23, 2025  
-**Total Time (Phases 1 + 1B + 2A):** ~58 hours (72 hours total with setup)  
-**Current Focus:** Phase 2.6 (Integration Testing)  
+**Total Time (Phases 1 + 1B + 2A):** ~60 hours (72 hours total with setup)  
+**Current Focus:** Ready for Phase 3 (Advanced AI) or Phase 4 (Polish & Testing)  
+**Integration Testing:** ✅ 5 critical tests passed, 2 UI/UX bugs logged  
 **Next Milestone:** Phase 3 (Advanced AI: Priority Detection, Decision Tracking, Multi-Step Agent)

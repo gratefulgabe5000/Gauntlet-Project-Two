@@ -1,7 +1,7 @@
 # MessageAI - Master Bug Tracker
 
 **Created:** October 21, 2025  
-**Last Updated:** October 21, 2025  
+**Last Updated:** October 23, 2025  
 **Project:** MessageAI MVP  
 **Environment:** Development  
 **Status:** Active Tracking  
@@ -10,17 +10,17 @@
 
 ## 📊 QUICK SUMMARY
 
-**Total Bugs:** 4 (3 Fixed ✅)  
+**Total Bugs:** 6 (3 Fixed ✅, 2 New for Phase 4)  
 **Known Limitations:** 1 📋  
 **Blocking Issues:** 0 🟢  
-**Production Status:** ✅ MVP Core Features Complete  
-**Demo Ready:** ✅ Ready (1 medium and 1 high deferred for post-MVP)  
+**Production Status:** ✅ MVP + 3 AI Features Complete  
+**Demo Ready:** ✅ Ready (3 deferred for Phase 4 Polish)  
 
 ### Functional Bugs Breakdown
 - **Critical:** 0 bugs ✅
-- **High Priority:** 1 bug (Deferred to post-MVP)
-- **Medium Priority:** 1 bug (Deferred to post-MVP)
-- **Low Priority:** 0 bugs
+- **High Priority:** 1 bug (Deferred to Phase 4)
+- **Medium Priority:** 2 bugs (1 old + 1 new from Phase 2.6 testing, deferred to Phase 4)
+- **Low Priority:** 1 bug (New from Phase 2.6 testing, deferred to Phase 4)
 - **Known Limitations:** 1 (push notifications in Expo Go)
 
 ### TypeScript Issues
@@ -28,7 +28,7 @@
 - **Production Code Errors:** 0
 - **Status:** None detected
 
-**Estimated Fix Time:** 7-9 hours remaining
+**Estimated Fix Time:** 9-12 hours remaining (including Phase 4 polish)
 
 ---
 
@@ -41,6 +41,8 @@
 | BUG-003 | Group chat read indicators show incorrectly | 🟠 High | Logic/Feature | ✅ Fixed | - |
 | BUG-004 | Login not persistent & accidental app exit | 🔴 Critical | Auth/Navigation | ✅ Fixed | - |
 | BUG-005 | One-on-one conversations show "Unknown" name | 🟠 High | Data/Display | ✅ Fixed | - |
+| BUG-006 | Message not highlighted after search navigation | 🟢 Low | UI/Visual | ⏸️ Deferred | 1-2 hours |
+| BUG-007 | Inconsistent BACK button navigation from AI features | 🟡 Medium | Navigation/UX | ⏸️ Deferred | 2-3 hours |
 | LIMIT-001 | Push notifications not supported in Expo Go (Android SDK 53+) | 📋 Limitation | Platform | Documented | N/A |
 
 **Legend:**
@@ -937,7 +939,7 @@ Marked as "Known Limitation" because:
 
 ---
 
-**Last Updated:** October 21, 2025 (Evening - Update 5)  
+**Last Updated:** October 23, 2025 (Evening - Update 5)  
 **Next Review:** URGENT - Before any demo recording attempt  
 **Status:** Active tracking - 4 open bugs (1 CRITICAL 🔴, 2 HIGH 🟠), 1 fixed ✅  
 
@@ -1050,19 +1052,163 @@ Marked as "Known Limitation" because:
 
 ---
 
+## 🐛 BUG-006: Message Not Highlighted After Search Navigation
+
+**Priority:** 🟢 Low  
+**Category:** UI/Visual  
+**Status:** ⏸️ Deferred to Phase 4  
+**Discovered:** October 23, 2025 (Phase 2.6 Integration Testing)  
+**Test Case:** TC-SS-004
+
+### Description
+When navigating from search results to a conversation, the target message is not highlighted or visually indicated to the user.
+
+### Steps to Reproduce
+1. Open AI Assistant
+2. Perform a search (e.g., "meeting")
+3. Tap on a search result
+4. Observe the conversation screen
+
+### Expected Behavior
+- Message should be highlighted with background color or border
+- Visual indication that this is the message from search results
+- User can immediately identify the relevant message
+
+### Actual Behavior
+- Message is in view and correctly positioned
+- No visual highlight or indicator
+- User must manually scan to find the relevant message
+
+### Impact
+- **Severity:** Low (Nice-to-have feature)
+- **User Impact:** Minor inconvenience - user has to visually scan
+- **Frequency:** Every search → navigate workflow
+- **Workaround:** Message is visible in context, just not highlighted
+
+### Technical Notes
+- Need to implement message highlighting feature
+- Pass messageId as navigation param
+- Apply temporary highlight style (fade after 2-3 seconds)
+- Consider scroll + highlight animation
+
+### Estimated Fix Time
+**1-2 hours**
+- Add highlight state to message component (30 min)
+- Implement navigation with messageId param (30 min)
+- Add fade-out animation (30 min)
+- Test on iOS + Android (30 min)
+
+### Resolution Plan
+- Schedule for Phase 4 (Polish & Testing)
+- Not blocking Phase 3 (Advanced AI Features)
+- Low priority - UX enhancement only
+
+---
+
+## 🐛 BUG-007: Inconsistent BACK Button Navigation from AI Features
+
+**Priority:** 🟡 Medium  
+**Category:** Navigation/UX  
+**Status:** ⏸️ Deferred to Phase 4  
+**Discovered:** October 23, 2025 (Phase 2.6 Integration Testing)  
+**Test Case:** TC-INT-001
+
+### Description
+BACK button navigation is inconsistent when using AI features from different contexts. Navigation stack is not properly maintained.
+
+### Steps to Reproduce
+
+**Scenario 1 (Works Correctly):**
+1. Search → Result → Conversation → BACK
+2. Result: Returns to search results ✅
+
+**Scenario 2 (Issue):**
+1. Conversation → AI Summary/Action Items → BACK
+2. Result: Goes to main Messages screen ❌
+3. Expected: Should return to conversation
+
+**Scenario 3 (Issue):**
+1. Search → Result → Conversation → AI Summary → BACK
+2. Result: Goes to main Messages screen ❌
+3. Expected: Should return to conversation, then search results on second BACK
+
+### Expected Behavior
+- BACK button should always return to the previous screen in navigation stack
+- Navigation context should be preserved across AI Assistant operations
+- Consistent behavior regardless of how AI Assistant was accessed
+
+### Actual Behavior
+- BACK from AI Assistant always goes to main Messages screen
+- Navigation stack is not preserved
+- User loses context and has to manually navigate
+
+### Impact
+- **Severity:** Medium (UX issue)
+- **User Impact:** Moderate - user loses navigation context
+- **Frequency:** Every time AI features used from conversation
+- **Workaround:** User can manually navigate back
+
+### Technical Notes
+- Need to implement navigation stack management
+- Track where user came from before opening AI Assistant
+- Options:
+  1. Pass `source` param (conversation | search | main)
+  2. Use React Navigation's `goBack()` with proper stack
+  3. Implement custom back handler based on context
+
+**Recommended Solution:**
+```typescript
+// Pass navigation source
+navigation.navigate('AIAssistant', {
+  source: 'conversation',
+  conversationId: currentConversationId,
+  returnTo: 'conversation', // where to go on BACK
+});
+
+// In AI Assistant, handle BACK
+const handleBack = () => {
+  if (route.params?.returnTo === 'conversation') {
+    navigation.navigate('Conversation', {
+      id: route.params.conversationId
+    });
+  } else {
+    navigation.navigate('Messages'); // default
+  }
+};
+```
+
+### Estimated Fix Time
+**2-3 hours**
+- Implement navigation context tracking (1 hour)
+- Update AI Assistant navigation handling (1 hour)
+- Test all navigation scenarios (1 hour)
+- Verify on iOS + Android (30 min)
+
+### Resolution Plan
+- Schedule for Phase 4 (Polish & Testing)
+- Not blocking Phase 3 (Advanced AI Features)
+- Medium priority - UX improvement
+- Should be fixed before final submission
+
+---
+
 
 
 ## 📅 CHANGELOG
 
-
+### October 23, 2025
+- **Phase 2.6 Integration Testing Complete**
+  - Added BUG-006: Message not highlighted after search navigation (Low priority)
+  - Added BUG-007: Inconsistent BACK button navigation from AI features (Medium priority)
+  - All 5 critical tests passed (100% pass rate)
+  - 3 AI features validated and working (Thread Summarization, Action Items, Smart Search)
+  - Both new bugs deferred to Phase 4 (Polish) - not blocking Phase 3
+  - Total bugs: 6 (3 fixed, 3 deferred for Phase 4)
 
 ### October 21, 2025
 - **Bug Tracker Created**
-
   - Initialized MessageAI bug tracker from template
-
   - Ready to track bugs as development progresses
-
   - Structure in place for comprehensive bug management
 
 
@@ -1113,7 +1259,7 @@ Marked as "Known Limitation" because:
 
 
 
-**Last Updated:** October 21, 2025  
+**Last Updated:** October 23, 2025  
 **Next Review:** During development and testing phases  
 **Status:** Active tracking - Ready for bug logging ✅  
 
@@ -1146,7 +1292,7 @@ Marked as "Known Limitation" because:
 
 
 
-**Last Updated:** October 21, 2025  
+**Last Updated:** October 23, 2025  
 **Next Review:** During development and testing phases  
 **Status:** Active tracking - Ready for bug logging ✅  
 

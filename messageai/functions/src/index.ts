@@ -151,6 +151,18 @@ export { extractActions } from './ai/extractActions';
 export { search } from './ai/search';
 
 /**
+ * Priority Detection function (Phase 3.1)
+ * Automatically detects message urgency and priority level
+ */
+export { detectPriority } from './ai/detectPriority';
+
+/**
+ * Firestore Trigger: On Message Created (Phase 3.1)
+ * Automatically detects priority for all new messages
+ */
+export { onMessageCreated } from './triggers/onMessageCreated';
+
+/**
  * Thread Summarization function (Phase 2.3)
  * Summarizes conversation threads using AI
  */

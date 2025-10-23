@@ -70,9 +70,20 @@ export default function ConversationCard({ conversation, onPress }: Conversation
 
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.name} numberOfLines={1}>
-            {getDisplayName()}
-          </Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.name} numberOfLines={1}>
+              {getDisplayName()}
+            </Text>
+            {/* Priority indicator (Phase 3.1) */}
+            {conversation.lastMessage?.priority && conversation.lastMessage.priority !== 'normal' && (
+              <View style={[
+                styles.priorityDot,
+                conversation.lastMessage.priority === 'urgent' && styles.priorityDotUrgent,
+                conversation.lastMessage.priority === 'high' && styles.priorityDotHigh,
+                conversation.lastMessage.priority === 'low' && styles.priorityDotLow,
+              ]} />
+            )}
+          </View>
           {conversation.lastMessage && (
             <Text style={styles.timestamp}>
               {formatTimestamp(conversation.lastMessage.timestamp)}
@@ -116,11 +127,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 6,
+  },
   name: {
     fontSize: 17,
     fontWeight: '600',
     color: '#000',
-    flex: 1,
+    flexShrink: 1,
+  },
+  // Priority indicator dot (Phase 3.1)
+  priorityDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: 2,
+  },
+  priorityDotUrgent: {
+    backgroundColor: '#FF3B30',
+  },
+  priorityDotHigh: {
+    backgroundColor: '#FF9500',
+  },
+  priorityDotLow: {
+    backgroundColor: '#34C759',
   },
   timestamp: {
     fontSize: 14,

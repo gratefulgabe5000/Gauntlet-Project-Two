@@ -72,6 +72,20 @@ export default function MessageBubble({ message, isOwn, onLongPress, conversatio
         {!isOwn && (
           <View style={styles.senderRow}>
             <Text style={styles.senderName}>{message.senderName}</Text>
+            {message.priority && message.priority !== 'normal' && (
+              <View style={[
+                styles.priorityBadge,
+                message.priority === 'urgent' && styles.priorityUrgent,
+                message.priority === 'high' && styles.priorityHigh,
+                message.priority === 'low' && styles.priorityLow,
+              ]}>
+                <Text style={styles.priorityText}>
+                  {message.priority === 'urgent' && '🚨 URGENT'}
+                  {message.priority === 'high' && '⚠️ HIGH'}
+                  {message.priority === 'low' && '📌 LOW'}
+                </Text>
+              </View>
+            )}
           </View>
         )}
         
@@ -224,6 +238,28 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 12,
     marginBottom: 4,
+  },
+  // Priority badge styles (Phase 3.1)
+  priorityBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 6,
+  },
+  priorityUrgent: {
+    backgroundColor: '#FF3B30', // Red for urgent
+  },
+  priorityHigh: {
+    backgroundColor: '#FF9500', // Orange for high
+  },
+  priorityLow: {
+    backgroundColor: '#34C759', // Green for low
+  },
+  priorityText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#fff',
+    letterSpacing: 0.5,
   },
 });
 

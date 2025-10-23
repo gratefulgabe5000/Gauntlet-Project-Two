@@ -32,6 +32,12 @@ export interface Message {
   aiGenerated?: boolean;
   aiContext?: string;
   
+  // Priority Detection (Phase 3.1)
+  priority?: 'urgent' | 'high' | 'normal' | 'low';
+  priorityConfidence?: number; // 0.0 to 1.0
+  priorityReasoning?: string; // Brief explanation from AI
+  priorityDetectedAt?: string; // ISO timestamp
+  
   // Media attachments
   mediaUrl?: string;
   mediaType?: string;
@@ -71,6 +77,7 @@ export interface Conversation {
     senderName: string;
     timestamp: string;
     type: 'text' | 'image' | 'file';
+    priority?: 'urgent' | 'high' | 'normal' | 'low'; // Phase 3.1: Message priority
   };
   
   // Metadata
@@ -100,6 +107,7 @@ export interface ConversationSummary {
     content: string;
     timestamp: string;
     senderId: string;
+    priority?: 'urgent' | 'high' | 'normal' | 'low'; // Phase 3.1: Message priority
   } | null;
   unreadCount: number;
   participants: User[];
