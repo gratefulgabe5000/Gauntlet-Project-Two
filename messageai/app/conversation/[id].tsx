@@ -44,6 +44,7 @@ export default function ConversationDetail() {
   const [sending, setSending] = useState(false);
   const [typingUsers, setTypingUsers] = useState<{ userId: string; userName: string }[]>([]);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
+  const [showAIMenu, setShowAIMenu] = useState(false);
   
   // Track if this conversation screen is currently active/visible
   const isScreenActive = useRef(true);
@@ -796,47 +797,66 @@ export default function ConversationDetail() {
             <Text style={styles.headerActionIcon}>📎</Text>
           </TouchableOpacity>
           
+          {/* AI Features Dropdown Button */}
           <TouchableOpacity 
-            style={styles.summarizeButton}
-            onPress={handleSummarize}
+            style={styles.aiMenuButton}
+            onPress={() => setShowAIMenu(true)}
             disabled={messages.length < 3}
           >
             <Text style={[
-              styles.summarizeText,
-              messages.length < 3 && styles.summarizeTextDisabled
+              styles.aiMenuButtonText,
+              messages.length < 3 && styles.aiMenuButtonTextDisabled
             ]}>
-              📝
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.summarizeButton}
-            onPress={handleExtractActions}
-            disabled={messages.length < 3}
-          >
-            <Text style={[
-              styles.summarizeText,
-              messages.length < 3 && styles.summarizeTextDisabled
-            ]}>
-              ✅
-            </Text>
-          </TouchableOpacity>
-          
-          {/* Phase 3.2: Track Decisions button */}
-          <TouchableOpacity 
-            style={styles.summarizeButton}
-            onPress={handleTrackDecisions}
-            disabled={messages.length < 3}
-          >
-            <Text style={[
-              styles.summarizeText,
-              messages.length < 3 && styles.summarizeTextDisabled
-            ]}>
-              🎯
+              🤖
             </Text>
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* AI Features Dropdown Menu */}
+      {showAIMenu && (
+        <>
+          <TouchableOpacity 
+            style={styles.aiMenuOverlay}
+            activeOpacity={1}
+            onPress={() => setShowAIMenu(false)}
+          />
+          <View style={styles.aiMenuDropdown}>
+            <TouchableOpacity
+              style={styles.aiMenuDropdownItem}
+              onPress={() => {
+                setShowAIMenu(false);
+                handleSummarize();
+              }}
+            >
+              <Text style={styles.aiMenuDropdownItemIcon}>📝</Text>
+              <Text style={styles.aiMenuDropdownItemText}>Summarize Thread</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.aiMenuDropdownItem}
+              onPress={() => {
+                setShowAIMenu(false);
+                handleExtractActions();
+              }}
+            >
+              <Text style={styles.aiMenuDropdownItemIcon}>✅</Text>
+              <Text style={styles.aiMenuDropdownItemText}>Extract Action Items</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.aiMenuDropdownItem}
+              onPress={() => {
+                setShowAIMenu(false);
+                handleTrackDecisions();
+              }}
+            >
+              <Text style={styles.aiMenuDropdownItemIcon}>🎯</Text>
+              <Text style={styles.aiMenuDropdownItemText}>Track Decisions</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
 
       {/* Messages */}
       <View style={styles.messagesContainer}>
@@ -932,15 +952,55 @@ const styles = StyleSheet.create({
   headerActionIcon: {
     fontSize: 18,
   },
-  summarizeButton: {
+  // AI Menu Button
+  aiMenuButton: {
     padding: 8,
   },
-  summarizeText: {
+  aiMenuButtonText: {
     fontSize: 24,
-    color: '#007AFF',
+    color: '#8B5CF6',
   },
-  summarizeTextDisabled: {
+  aiMenuButtonTextDisabled: {
     opacity: 0.3,
+  },
+  // AI Menu Dropdown
+  aiMenuOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    zIndex: 999,
+  },
+  aiMenuDropdown: {
+    position: 'absolute',
+    top: 110,
+    right: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+    paddingVertical: 8,
+    minWidth: 220,
+    zIndex: 1000,
+  },
+  aiMenuDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  aiMenuDropdownItemIcon: {
+    fontSize: 20,
+  },
+  aiMenuDropdownItemText: {
+    fontSize: 16,
+    color: '#000',
   },
   messagesContainer: {
     flex: 1,

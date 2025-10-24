@@ -1,7 +1,7 @@
 # MessageAI - Master Bug Tracker
 
 **Created:** October 21, 2025  
-**Last Updated:** October 23, 2025  
+**Last Updated:** October 24, 2025  
 **Project:** MessageAI MVP  
 **Environment:** Development  
 **Status:** Active Tracking  
@@ -10,18 +10,18 @@
 
 ## 📊 QUICK SUMMARY
 
-**Total Bugs:** 6 (3 Fixed ✅, 3 Deferred for Phase 4)  
-**Enhancements:** 1 💡 (Future)  
+**Total Bugs:** 7 (3 Fixed ✅, 4 Deferred for Phase 4)  
+**Enhancements:** 4 💡 (Future)  
 **Known Limitations:** 1 📋  
 **Blocking Issues:** 0 🟢  
 **Production Status:** ✅ MVP + 5 AI Features Complete (Phase 3.2)  
-**Demo Ready:** ✅ Ready (3 bugs + 1 enhancement deferred)  
+**Demo Ready:** ✅ Ready (4 bugs + 4 enhancements deferred)  
 
 ### Functional Bugs Breakdown
 - **Critical:** 0 bugs ✅
 - **High Priority:** 1 bug (Deferred to Phase 4)
-- **Medium Priority:** 2 bugs (1 old + 1 new from Phase 2.6 testing, deferred to Phase 4)
-- **Low Priority:** 1 bug (New from Phase 2.6 testing, deferred to Phase 4)
+- **Medium Priority:** 3 bugs (deferred to Phase 4)
+- **Low Priority:** 1 bug (Deferred to Phase 4)
 - **Known Limitations:** 1 (push notifications in Expo Go)
 
 ### TypeScript Issues
@@ -44,7 +44,11 @@
 | BUG-005 | One-on-one conversations show "Unknown" name | 🟠 High | Data/Display | ✅ Fixed | - |
 | BUG-006 | Message not highlighted after search navigation | 🟢 Low | UI/Visual | ⏸️ Deferred | 1-2 hours |
 | BUG-007 | Inconsistent BACK button navigation from AI features | 🟡 Medium | Navigation/UX | ⏸️ Deferred | 2-3 hours |
+| BUG-008 | AI features throw errors when no results found | 🟡 Medium | Error Handling | ⏸️ Deferred | 1-2 hours |
 | ENHANCE-001 | Decision Timeline: Scroll to specific message from "View Message" | 💡 Enhancement | Feature | ⏸️ Future | 2-3 hours |
+| ENHANCE-002 | Message actions: Forward, Copy to Clipboard, Delete | 💡 Enhancement | Feature | ⏸️ Future | 3-4 hours |
+| ENHANCE-003 | Delete conversations with participant agreement | 💡 Enhancement | Feature | ⏸️ Future | 2-3 hours |
+| ENHANCE-004 | Support for GIFs, Videos, and Emojis | 💡 Enhancement | Media | ⏸️ Future | 4-6 hours |
 | LIMIT-001 | Push notifications not supported in Expo Go (Android SDK 53+) | 📋 Limitation | Platform | Documented | N/A |
 
 **Legend:**
@@ -1185,6 +1189,366 @@ When navigating from search results to a conversation, the target message is not
 
 ---
 
+## 🐛 BUG-008: AI Features Throw Errors When No Results Found
+
+**Priority:** 🟡 Medium  
+**Category:** Error Handling  
+**Status:** ⏸️ Deferred to Phase 4  
+**Discovered:** October 24, 2025 (User Testing)  
+**Related Features:** Action Item Extraction, Decision Tracking
+
+### Description
+AI features (Action Items, Decisions) throw errors when no results are found in a conversation, instead of gracefully handling empty results. Thread Summarization handles this correctly, but needs verification for fully encrypted conversations.
+
+### Steps to Reproduce
+
+**Scenario 1: Action Items - No Actions Found**
+1. Open a conversation with only casual chat (no tasks/todos)
+2. Tap AI button → "Extract Action Items"
+3. Result: Error thrown ❌
+4. Expected: "No action items found in this conversation"
+
+**Scenario 2: Decisions - No Decisions Found**
+1. Open a conversation with only questions/discussions (no commitments)
+2. Tap AI button → "Track Decisions"
+3. Result: Error thrown ❌
+4. Expected: "No decisions found in this conversation"
+
+**Scenario 3: Fully Encrypted Conversation**
+1. Open a conversation where ALL messages are encrypted
+2. Tap AI button → "Summarize Thread" (or other features)
+3. Result: Unknown (needs verification)
+4. Expected: "Cannot analyze encrypted messages" message
+
+### Expected Behavior
+- AI features should detect empty/null results from OpenAI
+- Display user-friendly message instead of error
+- Provide helpful context (e.g., "Try adding tasks to extract action items")
+- Thread Summarization already handles this well - use as reference
+
+### Actual Behavior
+- JavaScript/TypeScript error thrown
+- App may crash or show error screen
+- Poor user experience
+
+### Impact
+- **Severity:** Medium (UX issue, not a blocker)
+- **User Impact:** Moderate - disrupts workflow, confusing error messages
+- **Frequency:** Common - many conversations have no action items or decisions
+- **Workaround:** User must restart app or navigate away
+
+### Technical Notes
+
+**Fix Required In:**
+1. **`functions/src/ai/extractActions.ts`:**
+   ```typescript
+   // Add check after AI response
+   if (!parsedResponse.items || parsedResponse.items.length === 0) {
+     return {
+       items: [],
+       messageCount,
+       encryptedCount,
+       timestamp: new Date().toISOString(),
+       message: "No action items found in this conversation."
+     };
+   }
+   ```
+
+2. **`functions/src/ai/trackDecisions.ts`:**
+   ```typescript
+   // Add check after AI response
+   if (!parsedResponse.decisions || parsedResponse.decisions.length === 0) {
+     return {
+       decisions: [],
+       messageCount,
+       encryptedCount,
+       timestamp: new Date().toISOString(),
+       message: "No decisions found in this conversation."
+     };
+   }
+   ```
+
+3. **`functions/src/ai/summarize.ts`:**
+   - Verify fully encrypted conversation handling
+   - Should return "Cannot summarize encrypted messages" message
+
+**Client-Side Handling:**
+- Update `app/(tabs)/ai-assistant.tsx` to display friendly messages
+- Show empty state UI instead of error
+- Provide helpful tips for using AI features
+
+### Estimated Fix Time
+- Backend error handling: **30 minutes**
+- Client-side UI updates: **30 minutes**
+- Testing all scenarios: **30 minutes**
+- **Total: 1-2 hours**
+
+### Priority Justification
+- **Not blocking:** App still works, just poor UX
+- **Medium priority:** Affects common use cases
+- **Defer to Phase 4:** Polish & error handling phase
+- **Good test case:** For comprehensive error handling review
+
+---
+
+## 💡 ENHANCE-002: Message Actions - Forward, Copy to Clipboard, Delete
+
+**Priority:** 💡 Enhancement  
+**Category:** Feature/UX  
+**Status:** ⏸️ Future Enhancement  
+**Discovered:** October 24, 2025 (User Request)  
+**Related Feature:** Message Management
+
+### Description
+Add standard messaging actions to individual messages: Forward to another conversation, Copy text to clipboard, and Delete message for sender.
+
+### Desired Features
+
+**1. Forward Message:**
+- Long-press on message → "Forward" option
+- Opens conversation selector
+- Forwards message to selected conversation(s)
+- Includes original sender attribution
+- Works with text, images, documents, voice messages
+
+**2. Copy to Clipboard:**
+- Long-press on message → "Copy" option
+- Copies message text to clipboard
+- Toast confirmation: "Copied to clipboard"
+- Only for text messages (not media)
+
+**3. Delete Message:**
+- Long-press on message → "Delete" option
+- Only available to message sender
+- Options: "Delete for me" / "Delete for everyone"
+- "Delete for everyone" only within 1 hour of sending
+- Shows "Message deleted" placeholder if deleted for everyone
+
+### Implementation Notes
+
+**UI Flow:**
+1. Long-press message → Show action menu (Modal or ActionSheet)
+2. Menu options based on message type and sender:
+   - Forward (all messages)
+   - Copy (text messages only)
+   - Delete (sender only)
+   - Cancel
+
+**Firestore Changes:**
+- Add `deleted: boolean` field to Message
+- Add `deletedAt: string` timestamp
+- Add `deletedBy: string` user ID
+- Keep message in Firestore but mark as deleted
+
+**React Native Components:**
+- Use `@react-native-menu/menu` or custom Modal
+- Long-press handler on MessageBubble
+- Clipboard API for copy functionality
+- Conversation selector for forward
+
+### Benefits
+- **Standard feature:** Expected in modern messaging apps
+- **Better UX:** Users can manage their messages
+- **Productivity:** Forward important messages to team
+- **Privacy:** Delete sensitive messages
+
+### Estimated Implementation Time
+- Long-press menu UI: **1 hour**
+- Copy to clipboard: **30 minutes**
+- Forward message flow: **1.5 hours**
+- Delete message logic: **1 hour**
+- Testing all scenarios: **30 minutes**
+- **Total: 3-4 hours**
+
+### Related Code
+- `src/components/messages/MessageBubble.tsx` - Add long-press handler
+- `src/services/firebase/firestore.ts` - Delete message function
+- New: `src/components/messages/MessageActionsMenu.tsx`
+- New: `src/components/conversations/ConversationSelector.tsx`
+
+---
+
+## 💡 ENHANCE-003: Delete Conversations with Participant Agreement
+
+**Priority:** 💡 Enhancement  
+**Category:** Feature/UX  
+**Status:** ⏸️ Future Enhancement  
+**Discovered:** October 24, 2025 (User Request)  
+**Related Feature:** Conversation Management
+
+### Description
+Allow users to delete entire conversations, with requirement that all participants agree before conversation is permanently deleted.
+
+### Desired Behavior
+
+**1. Single User Delete:**
+- User swipes conversation → "Delete" option
+- Confirmation: "Delete conversation?"
+- Result: Conversation removed from user's list
+- Other participants still see conversation
+- Firestore: Remove user from `participantIds` array
+
+**2. All Participants Agreement:**
+- If all participants delete, conversation is permanently deleted
+- Firestore: Delete entire conversation document
+- Firestore: Delete all message subcollection documents
+- Storage: Delete all associated media files
+
+**3. Conversation Archiving (Alternative):**
+- Instead of delete, option to "Archive"
+- Archived conversations hidden from main list
+- Can be restored from Archive section
+- Less destructive than delete
+
+### Implementation Notes
+
+**Firestore Logic:**
+```typescript
+// When user deletes conversation
+1. Remove userId from conversation.participantIds
+2. If participantIds.length === 0:
+   - Delete conversation document
+   - Delete all messages in subcollection
+   - Delete media from Storage
+3. Else:
+   - Keep conversation for remaining participants
+```
+
+**UI Flow:**
+1. Swipe left on conversation → Delete button appears
+2. Confirmation dialog with options:
+   - "Delete for me" (default)
+   - "Request delete for everyone" (requires agreement)
+   - Cancel
+3. If delete for me: Remove from participant list
+4. If request for everyone: Send notification to all participants
+
+**Storage Cleanup:**
+- Cloud Function to delete orphaned media
+- Runs when conversation is fully deleted
+- Removes images, documents, voice messages from Storage
+
+### Benefits
+- **Privacy:** Remove sensitive conversations
+- **Organization:** Clean up old/unused conversations
+- **Storage:** Free up Firestore and Storage space
+- **Expected feature:** Standard in messaging apps
+
+### Estimated Implementation Time
+- Swipe-to-delete UI: **1 hour**
+- Delete logic (Firestore): **1 hour**
+- Storage cleanup function: **30 minutes**
+- Archive feature (optional): **30 minutes**
+- Testing: **30 minutes**
+- **Total: 2-3 hours** (add 1 hour for archive feature)
+
+### Priority Justification
+- **Nice-to-have:** Not critical for MVP
+- **Future enhancement:** Can be added in v2.0
+- **Complexity:** Requires careful handling of shared data
+- **Alternative:** Manual cleanup by admin
+
+### Related Code
+- `app/(tabs)/conversations.tsx` - Add swipe-to-delete
+- `src/services/firebase/firestore.ts` - Delete conversation function
+- New Cloud Function: `functions/src/cleanup/deleteConversation.ts`
+
+---
+
+## 💡 ENHANCE-004: Support for GIFs, Videos, and Emojis
+
+**Priority:** 💡 Enhancement  
+**Category:** Media/Feature  
+**Status:** ⏸️ Future Enhancement  
+**Discovered:** October 24, 2025 (User Request)  
+**Related Feature:** Media Messaging
+
+### Description
+Expand media support beyond images to include GIFs, videos, and rich emoji picker for enhanced communication.
+
+### Desired Features
+
+**1. GIF Support:**
+- Integrate Giphy API or Tenor API
+- GIF picker button in message input
+- Search GIFs by keyword
+- Preview before sending
+- Display animated GIFs in chat
+
+**2. Video Support:**
+- Record video (up to 30 seconds)
+- Upload video from gallery (up to 50MB)
+- Video compression for mobile networks
+- Thumbnail generation
+- In-app video player with controls
+
+**3. Emoji Picker:**
+- Native emoji picker or `emoji-mart`
+- Recent emojis section
+- Category organization
+- Search emojis
+- Emoji reactions to messages (separate feature)
+
+### Implementation Notes
+
+**GIF Support (2 hours):**
+- Install `@giphy/react-native-sdk` or use Tenor API
+- Add GIF button to MessageInput
+- Create GifPicker modal component
+- Store GIF URL in message (no upload needed)
+- Display GIF using Image component with proper sizing
+
+**Video Support (3-4 hours):**
+- Install `expo-video` for playback
+- Use `expo-image-picker` for video selection
+- Install `expo-video-thumbnails` for thumbnails
+- Compress videos using `expo-av` or `react-native-compressor`
+- Upload to Firebase Storage (similar to images)
+- Update Message model: `mediaType: 'video'`
+- Create VideoMessage component with play/pause controls
+
+**Emoji Picker (1 hour):**
+- Install `emoji-mart` or use native emoji keyboard
+- Add emoji button to MessageInput
+- Create EmojiPicker modal
+- Insert emoji at cursor position
+- Optional: Emoji reactions (tap message → add reaction)
+
+### Benefits
+- **Richer communication:** Beyond just text and images
+- **Modern UX:** Expected in contemporary messaging apps
+- **Engagement:** Users communicate more expressively
+- **Competitive:** Matches WhatsApp/Telegram features
+
+### Estimated Implementation Time
+- GIF integration (Giphy/Tenor): **2 hours**
+- Video recording & upload: **2 hours**
+- Video playback component: **1 hour**
+- Emoji picker: **1 hour**
+- Testing all media types: **1 hour**
+- **Total: 4-6 hours** (can be done incrementally)
+
+### API Keys Required
+- **Giphy API:** Free tier (42 requests/hour)
+- **Tenor API:** Free tier (similar limits)
+- Both provide React Native SDKs
+
+### Priority Justification
+- **Nice-to-have:** Not critical for MVP
+- **High user value:** Significantly enhances app appeal
+- **Future enhancement:** Great for v2.0 release
+- **Incremental:** Can add GIFs first, then videos, then emojis
+
+### Related Code
+- `src/components/messages/MessageInput.tsx` - Add media buttons
+- `src/types/models.ts` - Update Message model
+- New: `src/components/messages/GifPicker.tsx`
+- New: `src/components/messages/VideoMessage.tsx`
+- New: `src/components/messages/EmojiPicker.tsx`
+- `src/services/firebase/storage.ts` - Video upload handling
+
+---
+
 ## 🐛 BUG-007: Inconsistent BACK Button Navigation from AI Features
 
 **Priority:** 🟡 Medium  
@@ -1277,12 +1641,19 @@ const handleBack = () => {
 ## 📅 CHANGELOG
 
 ### October 24, 2025
+- **User Feedback & Feature Requests**
+  - Added BUG-008: AI features throw errors when no results found (Medium priority)
+  - Added ENHANCE-002: Message actions - Forward, Copy, Delete (3-4 hours)
+  - Added ENHANCE-003: Delete conversations with participant agreement (2-3 hours)
+  - Added ENHANCE-004: Support for GIFs, Videos, and Emojis (4-6 hours)
+  - All items deferred to Phase 4 or future releases
+  - Total: 7 bugs (3 fixed, 4 deferred) + 4 enhancements (future)
+
 - **Phase 3.2 Decision Tracking Complete**
   - Added ENHANCE-001: Decision Timeline - Scroll to specific message (Enhancement)
   - Feature request: Navigate to specific message and highlight it from Decision Timeline
   - Future enhancement - not blocking any phases
   - Estimated 2-3 hours implementation time
-  - Total: 6 bugs (3 fixed, 3 deferred) + 1 enhancement (future)
 
 ### October 23, 2025
 - **Phase 2.6 Integration Testing Complete**

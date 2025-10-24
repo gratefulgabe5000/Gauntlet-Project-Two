@@ -29,6 +29,8 @@ import {
   trackDecisions,
   Decision,
   TrackDecisionsResponse,
+  migrateMessagesToPinecone,
+  MigrateToPineconeResponse,
 } from '../../src/services/firebase/functions';
 import { getConversation, getUser } from '../../src/services/firebase/firestore';
 import { auth } from '../../src/services/firebase/config';
@@ -417,6 +419,66 @@ export default function AIAssistant() {
     setSearchResults(null);
   };
 
+  /**
+   * Migrate existing messages to Pinecone
+   * Phase 3.3: RAG Integration
+   */
+  const handleMigrateToPinecone = async () => {
+    if (isLoading) return;
+
+    Alert.alert(
+      'Index Messages to Pinecone?',
+      'This will index your existing messages to enable semantic search. This may take a minute. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Continue',
+          onPress: async () => {
+            setIsLoading(true);
+            
+            try {
+              const result = await migrateMessagesToPinecone({
+                batchSize: 50,
+              });
+
+              // Add result as a message
+              const newMessage: ChatMessage = {
+                id: `migration-${Date.now()}`,
+                role: 'assistant',
+                content: `✅ ${result.message}\n\n📊 Stats:\n• Indexed: ${result.indexed}\n• Skipped: ${result.skipped}\n• Failed: ${result.failed}\n${result.hasMore ? `\n⚠️ More messages available. Run again to index more.` : '\n✅ All messages indexed!'}`,
+                timestamp: new Date(),
+              };
+
+              setMessages((prev) => [...prev, newMessage]);
+              await saveMessages([...messages, newMessage]);
+
+              // Scroll to bottom
+              setTimeout(() => {
+                flatListRef.current?.scrollToEnd({ animated: true });
+              }, 100);
+
+              console.log('[AI Assistant] Migration completed', {
+                indexed: result.indexed,
+                skipped: result.skipped,
+                failed: result.failed,
+                hasMore: result.hasMore,
+              });
+            } catch (error) {
+              console.error('[AI Assistant] Migration failed:', error);
+              
+              Alert.alert(
+                'Migration Error',
+                'Could not index messages. Please check your internet connection and try again.'
+              );
+            } finally {
+              setIsLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
     const isSummary = item.type === 'summary';
@@ -464,6 +526,54 @@ export default function AIAssistant() {
             )}
           </View>
         )}
+        {/* Display Action Items if present */}
+        {isActions && item.actionItems && item.actionItems.length > 0 && (
+          <>
+            <View style={styles.actionItemsContainer}>
+              <ActionItemsList actionItems={item.actionItems} />
+            </View>
+            {/* Back to Conversation button for Actions */}
+            {item.conversationId && (
+              <TouchableOpacity
+                style={styles.backToConversationButton}
+                onPress={() => {
+                  router.push(`/conversation/${item.conversationId}`);
+                }}
+              >
+                <Text style={styles.backToConversationText}>
+                  {'\u2190'} Back to Conversation
+                </Text>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
+        
+        {/* Display Decisions Timeline if present (Phase 3.2) */}
+        {item.type === 'decisions' && item.decisions && (
+          <>
+            <View style={styles.decisionsContainer}>
+              <DecisionTimeline
+                decisions={item.decisions}
+                messageCount={item.messageCount || 0}
+                encryptedCount={item.encryptedCount}
+              />
+            </View>
+            {/* Back to Conversation button */}
+            {item.conversationId && (
+              <TouchableOpacity
+                style={styles.backToConversationButton}
+                onPress={() => {
+                  router.push(`/conversation/${item.conversationId}`);
+                }}
+              >
+                <Text style={styles.backToConversationText}>
+                  {'\u2190'} Back to Conversation
+                </Text>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
+        
         <Text
           style={[
             styles.messageText,
@@ -482,57 +592,9 @@ export default function AIAssistant() {
             }}
           >
             <Text style={styles.backToConversationText}>
-              ← Back to Conversation
+              {'\u2190'} Back to Conversation
             </Text>
           </TouchableOpacity>
-        )}
-        
-        {/* Display Action Items if present */}
-        {isActions && item.actionItems && item.actionItems.length > 0 && (
-          <>
-            {/* Back to Conversation button for Actions */}
-            {item.conversationId && (
-              <TouchableOpacity
-                style={styles.backToConversationButton}
-                onPress={() => {
-                  router.push(`/conversation/${item.conversationId}`);
-                }}
-              >
-                <Text style={styles.backToConversationText}>
-                  ← Back to Conversation
-                </Text>
-              </TouchableOpacity>
-            )}
-            <View style={styles.actionItemsContainer}>
-              <ActionItemsList actionItems={item.actionItems} />
-            </View>
-          </>
-        )}
-        
-        {/* Display Decisions Timeline if present (Phase 3.2) */}
-        {item.type === 'decisions' && item.decisions && (
-          <>
-            {/* Back to Conversation button */}
-            {item.conversationId && (
-              <TouchableOpacity
-                style={styles.backToConversationButton}
-                onPress={() => {
-                  router.push(`/conversation/${item.conversationId}`);
-                }}
-              >
-                <Text style={styles.backToConversationText}>
-                  ← Back to Conversation
-                </Text>
-              </TouchableOpacity>
-            )}
-            <View style={styles.decisionsContainer}>
-              <DecisionTimeline
-                decisions={item.decisions}
-                messageCount={item.messageCount || 0}
-                encryptedCount={item.encryptedCount}
-              />
-            </View>
-          </>
         )}
         
         <Text
@@ -590,6 +652,17 @@ export default function AIAssistant() {
             </Text>
           </TouchableOpacity>
         </View>
+        
+        {/* Migration Button (Phase 3.3: Pinecone RAG) */}
+        <TouchableOpacity
+          style={styles.migrationButton}
+          onPress={handleMigrateToPinecone}
+          disabled={isLoading}
+        >
+          <Text style={styles.migrationButtonText}>
+            📦 Index Existing Messages to Pinecone
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Back to Chat Button (when showing search results) */}
@@ -899,6 +972,18 @@ const styles = StyleSheet.create({
   },
   searchButtonText: {
     fontSize: 20,
+  },
+  migrationButton: {
+    backgroundColor: '#8B5CF6',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  migrationButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   backButton: {
     backgroundColor: '#007AFF',

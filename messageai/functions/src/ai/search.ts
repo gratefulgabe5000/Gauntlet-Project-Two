@@ -149,33 +149,98 @@ export const search = functions.https.onCall(async (data, context) => {
       totalMessages: allMessages.length,
     });
 
-    // Step 3: AI-powered query expansion
-    const { expandSearchQuery } = await import('../services/openai.service');
-    const { expandedTerms } = await expandSearchQuery(searchQuery);
+    // Step 3: Try Pinecone vector search first (Phase 3.3: RAG)
+    let matchingMessages: Array<{
+      id: string;
+      conversationId: string;
+      senderId: string;
+      senderName: string;
+      content: string;
+      timestamp: any;
+      relevanceScore?: number;
+    }> = [];
+    
+    let usedVectorSearch = false;
+    let expandedTerms: string[] = [];
 
-    functions.logger.info('Query expanded for search', {
-      uid: userId,
-      originalQuery: searchQuery,
-      expandedTerms,
-    });
+    try {
+      // Generate embedding for the search query
+      const { generateEmbedding } = await import('../services/openai.service');
+      const queryEmbedding = await generateEmbedding(searchQuery);
 
-    // Step 4: Enhanced keyword search with expanded terms
-    const matchingMessages = allMessages.filter((message) => {
-      const messageContent = message.content.toLowerCase();
-      const messageSender = message.senderName.toLowerCase();
-      
-      // Match any of the expanded terms in content or sender name
-      return expandedTerms.some(term => 
-        messageContent.includes(term) || messageSender.includes(term)
+      // Query Pinecone for similar messages
+      const { querysimilarMessages } = await import('../utils/pinecone.service');
+      const pineconeResults = await querysimilarMessages(queryEmbedding, {
+        topK: limit * 2, // Get extra results, will filter by user's conversations
+        includeMetadata: true,
+      });
+
+      functions.logger.info('Pinecone search results', {
+        uid: userId,
+        query: searchQuery,
+        rawResults: pineconeResults.length,
+      });
+
+      // Filter results to only include user's conversations
+      const filteredResults = pineconeResults.filter((result: any) => 
+        conversationIds.includes(result.metadata?.conversationId)
       );
-    });
 
-    functions.logger.info('Search results', {
-      uid: userId,
-      query: searchQuery,
-      expandedTermsUsed: expandedTerms.length,
-      totalFound: matchingMessages.length,
-    });
+      // Map Pinecone results to our message format
+      matchingMessages = filteredResults.map((result: any) => ({
+        id: result.id,
+        conversationId: result.metadata?.conversationId || '',
+        senderId: result.metadata?.senderId || '',
+        senderName: result.metadata?.senderName || 'Unknown',
+        content: result.metadata?.content || '',
+        timestamp: result.metadata?.timestamp || new Date().toISOString(),
+        relevanceScore: result.score, // Cosine similarity score from Pinecone
+      }));
+
+      usedVectorSearch = true;
+
+      functions.logger.info('Vector search completed', {
+        uid: userId,
+        query: searchQuery,
+        totalFound: matchingMessages.length,
+      });
+
+    } catch (error) {
+      // Fallback to keyword search if Pinecone fails
+      functions.logger.warn('Pinecone search failed, falling back to keyword search', {
+        uid: userId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
+      // Step 3b: AI-powered query expansion (fallback)
+      const { expandSearchQuery } = await import('../services/openai.service');
+      const expandResult = await expandSearchQuery(searchQuery);
+      expandedTerms = expandResult.expandedTerms;
+
+      functions.logger.info('Query expanded for search', {
+        uid: userId,
+        originalQuery: searchQuery,
+        expandedTerms,
+      });
+
+      // Step 4b: Enhanced keyword search with expanded terms (fallback)
+      matchingMessages = allMessages.filter((message) => {
+        const messageContent = message.content.toLowerCase();
+        const messageSender = message.senderName.toLowerCase();
+        
+        // Match any of the expanded terms in content or sender name
+        return expandedTerms.some(term => 
+          messageContent.includes(term) || messageSender.includes(term)
+        );
+      });
+
+      functions.logger.info('Keyword search results', {
+        uid: userId,
+        query: searchQuery,
+        expandedTermsUsed: expandedTerms.length,
+        totalFound: matchingMessages.length,
+      });
+    }
 
     // Step 4: Build search results with conversation context
     const results: SearchResult[] = matchingMessages
@@ -190,7 +255,8 @@ export const search = functions.https.onCall(async (data, context) => {
           senderId: message.senderId,
           senderName: message.senderName,
           content: message.content,
-          timestamp: message.timestamp?.toDate?.()?.toISOString() || new Date().toISOString(),
+          timestamp: message.timestamp?.toDate?.()?.toISOString() || message.timestamp || new Date().toISOString(),
+          relevanceScore: message.relevanceScore, // Include Pinecone similarity score if available
         };
       });
 
@@ -198,7 +264,7 @@ export const search = functions.https.onCall(async (data, context) => {
       results,
       totalFound: matchingMessages.length,
       query: searchQuery,
-      expandedQuery: expandedTerms.join(', '),
+      expandedQuery: usedVectorSearch ? 'Vector Search (RAG)' : expandedTerms.join(', '),
       timestamp: new Date().toISOString(),
     } as SearchResponse;
 

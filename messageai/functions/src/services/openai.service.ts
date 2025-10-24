@@ -765,4 +765,34 @@ Return ONLY valid JSON, no markdown formatting.`,
   }
 }
 
+/**
+ * Generate embedding for text using OpenAI
+ * Phase 3.3: Semantic Search with RAG
+ */
+export async function generateEmbedding(text: string): Promise<number[]> {
+  try {
+    const client = getOpenAIClient();
+
+    // Use OpenAI's text-embedding-3-small model (1536 dimensions, cost-effective)
+    const response = await client.embeddings.create({
+      model: 'text-embedding-3-small',
+      input: text,
+      encoding_format: 'float',
+    });
+
+    const embedding = response.data[0].embedding;
+
+    functions.logger.info('Embedding generated', {
+      textLength: text.length,
+      embeddingDimensions: embedding.length,
+      tokensUsed: response.usage?.total_tokens,
+    });
+
+    return embedding;
+  } catch (error) {
+    functions.logger.error('Failed to generate embedding', { error });
+    throw error;
+  }
+}
+
 

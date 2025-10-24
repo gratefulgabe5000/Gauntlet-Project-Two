@@ -26,10 +26,16 @@ export function DecisionTimeline({
   const router = useRouter();
 
   const handleViewMessage = (decision: Decision) => {
-    if (decision.sourceMessageIds.length > 0) {
-      // Navigate to conversation with the first source message
-      router.push(`/conversation/${decision.conversationId}`);
+    if (!decision.conversationId) {
+      console.warn('[DecisionTimeline] No conversationId for decision:', decision.id);
+      return;
     }
+    
+    console.log('[DecisionTimeline] Navigating to conversation:', decision.conversationId);
+    
+    // Navigate to conversation
+    // TODO: In future, could pass messageId to scroll to specific message
+    router.push(`/conversation/${decision.conversationId}`);
   };
 
   const getCategoryColor = (category?: string) => {

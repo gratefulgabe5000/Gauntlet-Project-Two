@@ -163,10 +163,22 @@ export { detectPriority } from './ai/detectPriority';
 export { onMessageCreated } from './triggers/onMessageCreated';
 
 /**
+ * Firestore Trigger: On Message Created - Indexing (Phase 3.3)
+ * Automatically indexes new messages to Pinecone for semantic search
+ */
+export { onMessageCreatedIndexing } from './triggers/onMessageCreatedIndexing';
+
+/**
  * Decision Tracking function (Phase 3.2)
  * Extracts key decisions from conversation threads
  */
 export { trackDecisions } from './ai/trackDecisions';
+
+/**
+ * Migration Script: Index Existing Messages to Pinecone (Phase 3.3)
+ * One-time migration to backfill vector database
+ */
+export { migrateMessagesToPinecone } from './ai/migrateMessagesToPinecone';
 
 /**
  * Thread Summarization function (Phase 2.3)

@@ -189,4 +189,38 @@ export async function trackDecisions(request: TrackDecisionsRequest): Promise<Tr
   return data;
 }
 
+/**
+ * Migrate Messages to Pinecone
+ * Phase 3.3: Semantic Search with RAG
+ */
+export interface MigrateToPineconeRequest {
+  batchSize?: number; // Default: 50
+  startAfter?: string; // Message ID to start after (for pagination)
+}
+
+export interface MigrateToPineconeResponse {
+  success: boolean;
+  message: string;
+  indexed: number;
+  skipped: number;
+  failed: number;
+  errors?: Array<{ messageId: string; error: string }>;
+  hasMore: boolean;
+  lastMessageId?: string;
+  indexStats?: {
+    before: any;
+    after: any;
+  };
+  timestamp: string;
+}
+
+export async function migrateMessagesToPinecone(
+  request: MigrateToPineconeRequest = {}
+): Promise<MigrateToPineconeResponse> {
+  const migrateCallable = httpsCallable(functions, 'migrateMessagesToPinecone');
+  const result = await migrateCallable(request);
+  const data = result.data as MigrateToPineconeResponse;
+  return data;
+}
+
 
