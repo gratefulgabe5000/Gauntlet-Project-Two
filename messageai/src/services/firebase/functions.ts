@@ -147,4 +147,46 @@ export async function searchMessages(request: SearchRequest): Promise<SearchResp
   return data;
 }
 
+/**
+ * Track Decisions
+ * Phase 3.2: Decision Tracking
+ */
+export interface TrackDecisionsRequest {
+  conversationId: string;
+  messageLimit?: number; // Max messages to analyze (default: 50)
+}
+
+export interface Decision {
+  id: string;
+  conversationId: string;
+  decision: string;
+  decisionMaker: string;
+  decisionMakerId?: string;
+  decidedAt: string;
+  extractedAt: string;
+  context: string;
+  reasoning?: string;
+  implications?: string;
+  sourceMessageIds: string[];
+  messageSnippets?: string[];
+  category?: 'strategic' | 'tactical' | 'operational' | 'personal';
+  impactLevel?: 'high' | 'medium' | 'low';
+  confidence: number;
+  participants?: string[];
+}
+
+export interface TrackDecisionsResponse {
+  decisions: Decision[];
+  messageCount: number;
+  encryptedCount?: number;
+  timestamp: string;
+}
+
+export async function trackDecisions(request: TrackDecisionsRequest): Promise<TrackDecisionsResponse> {
+  const trackDecisionsCallable = httpsCallable(functions, 'trackDecisions');
+  const result = await trackDecisionsCallable(request);
+  const data = result.data as TrackDecisionsResponse;
+  return data;
+}
+
 

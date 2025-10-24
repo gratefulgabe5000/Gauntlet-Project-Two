@@ -163,6 +163,12 @@ export { detectPriority } from './ai/detectPriority';
 export { onMessageCreated } from './triggers/onMessageCreated';
 
 /**
+ * Decision Tracking function (Phase 3.2)
+ * Extracts key decisions from conversation threads
+ */
+export { trackDecisions } from './ai/trackDecisions';
+
+/**
  * Thread Summarization function (Phase 2.3)
  * Summarizes conversation threads using AI
  */

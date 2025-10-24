@@ -595,4 +595,174 @@ Return ONLY valid JSON object, no markdown formatting, no explanations.`,
   }
 }
 
+/**
+ * Phase 3.2: Decision Tracking
+ * Analyzes conversation messages to extract key decisions
+ */
+export async function trackConversationDecisions(
+  messages: any[],
+  conversationId: string
+): Promise<any[]> {
+  try {
+    const client = getOpenAIClient();
+
+    // Format messages for the AI
+    const formattedMessages = messages
+      .map((msg: any) => {
+        return `[${msg.timestamp}] ${msg.senderName}: ${msg.content}`;
+      })
+      .join('\n');
+
+    const response = await client.chat.completions.create({
+      model: OPENAI_MODELS.CHAT,
+      messages: [
+        {
+          role: 'system',
+          content: `You are a decision tracking assistant. Analyze conversations and extract key decisions.
+
+A DECISION is a commitment or resolution that:
+- Represents a choice that was made (not just discussed)
+- Has clear direction or outcome
+- Involves action or commitment
+- Can be attributed to a person or group
+
+EXTRACT DECISIONS ONLY IF:
+1. Someone explicitly makes a choice ("I've decided...", "Let's go with...", "We'll do...")
+2. There's consensus or approval ("Agreed", "Sounds good, let's do it", "Approved")
+3. A direction is set ("We're moving forward with...", "The plan is...")
+
+DO NOT EXTRACT:
+- Questions or suggestions ("Should we...?", "What if we...?")
+- Ongoing discussions without resolution
+- Information sharing without commitment
+- Casual conversation
+
+FOR EACH DECISION, EXTRACT:
+1. **decision** (string, required): The decision that was made (clear, specific)
+2. **decisionMaker** (string, required): Who made the decision (use their name from the message)
+3. **decisionMakerId** (string, optional): User ID if identifiable (usually null)
+4. **decidedAt** (string, required): ISO timestamp when the decision was made
+5. **context** (string, required): Brief context (1-2 sentences)
+6. **reasoning** (string, optional): Why the decision was made (if mentioned)
+7. **implications** (string, optional): Potential impacts or next steps (if mentioned)
+8. **sourceMessageIds** (array, required): Array of message IDs where decision was made/discussed
+9. **messageSnippets** (array, optional): Relevant quotes from the conversation
+10. **category** (string, optional): 'strategic', 'tactical', 'operational', or 'personal'
+11. **impactLevel** (string, optional): 'high', 'medium', or 'low'
+12. **confidence** (number, required): Your confidence in this being a real decision (0.0-1.0)
+13. **participants** (array, optional): Other people involved in the decision
+
+RETURN FORMAT:
+Return a JSON object with:
+- decisions: array of decision objects following the schema above
+
+Example response:
+{
+  "decisions": [
+    {
+      "decision": "Migrate to AWS for better scalability",
+      "decisionMaker": "Sarah Chen",
+      "decisionMakerId": null,
+      "decidedAt": "2025-10-23T14:30:00Z",
+      "context": "After discussing cloud providers, team agreed AWS offers better scaling options for our needs.",
+      "reasoning": "Better auto-scaling features and existing team expertise with AWS services",
+      "implications": "Need to budget $5k/month, migration will take 2 weeks",
+      "sourceMessageIds": ["msg123", "msg124"],
+      "messageSnippets": ["Let's go with AWS", "Agreed, AWS is the better choice"],
+      "category": "strategic",
+      "impactLevel": "high",
+      "confidence": 0.95,
+      "participants": ["Mike Johnson", "Team"]
+    }
+  ]
+}
+
+If NO clear decisions found, return: { "decisions": [] }
+
+Return ONLY valid JSON, no markdown formatting.`,
+        },
+        {
+          role: 'user',
+          content: `Extract decisions from this conversation:\n\n${formattedMessages}`,
+        },
+      ],
+      max_tokens: 2000,
+      temperature: 0.3, // Lower temperature for consistent extraction
+      response_format: { type: 'json_object' },
+    });
+
+    const content = response.choices[0]?.message?.content?.trim();
+
+    if (!content) {
+      functions.logger.warn('OpenAI returned empty response for decision tracking');
+      return [];
+    }
+
+    // Parse JSON response
+    let parsedResponse: any;
+    try {
+      parsedResponse = JSON.parse(content);
+    } catch (parseError) {
+      functions.logger.error('Failed to parse decision tracking JSON', {
+        content,
+        parseError: parseError instanceof Error ? parseError.message : 'Unknown error',
+      });
+      return [];
+    }
+
+    // Validate and transform decisions
+    const decisions = Array.isArray(parsedResponse.decisions) 
+      ? parsedResponse.decisions 
+      : [];
+
+    const validatedDecisions = decisions
+      .filter((item: any) => {
+        // Must have required fields
+        return item.decision && 
+               item.decisionMaker && 
+               item.decidedAt && 
+               item.context;
+      })
+      .map((item: any) => ({
+        conversationId,
+        decision: String(item.decision),
+        decisionMaker: String(item.decisionMaker),
+        decisionMakerId: item.decisionMakerId || null,
+        decidedAt: String(item.decidedAt),
+        context: String(item.context),
+        reasoning: item.reasoning ? String(item.reasoning) : undefined,
+        implications: item.implications ? String(item.implications) : undefined,
+        sourceMessageIds: Array.isArray(item.sourceMessageIds) 
+          ? item.sourceMessageIds 
+          : [],
+        messageSnippets: Array.isArray(item.messageSnippets) 
+          ? item.messageSnippets 
+          : undefined,
+        category: ['strategic', 'tactical', 'operational', 'personal'].includes(item.category)
+          ? item.category
+          : undefined,
+        impactLevel: ['high', 'medium', 'low'].includes(item.impactLevel)
+          ? item.impactLevel
+          : undefined,
+        confidence: typeof item.confidence === 'number' 
+          ? Math.max(0, Math.min(1, item.confidence))
+          : 0.7,
+        participants: Array.isArray(item.participants) 
+          ? item.participants 
+          : undefined,
+      }));
+
+    functions.logger.info('Decisions tracked', {
+      messageCount: messages.length,
+      decisionCount: validatedDecisions.length,
+      tokensUsed: response.usage?.total_tokens,
+    });
+
+    return validatedDecisions;
+  } catch (error) {
+    functions.logger.error('Failed to track decisions', { error });
+    throw error;
+  }
+}
+
 

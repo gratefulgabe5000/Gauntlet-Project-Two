@@ -699,6 +699,26 @@ export default function ConversationDetail() {
     });
   };
 
+  // Phase 3.2: Track Decisions handler
+  const handleTrackDecisions = () => {
+    if (!id) return;
+
+    // Check if there are enough messages
+    if (messages.length < 3) {
+      Alert.alert('Not Enough Messages', 'Please have at least 3 messages in the conversation to track decisions.');
+      return;
+    }
+
+    // Navigate immediately to AI Assistant tab with request to track decisions
+    router.push({
+      pathname: '/(tabs)/ai-assistant',
+      params: {
+        requestDecisions: 'true',
+        conversationId: id,
+      },
+    });
+  };
+
   return (
     <KeyboardAvoidingView 
       style={styles.container}
@@ -799,6 +819,20 @@ export default function ConversationDetail() {
               messages.length < 3 && styles.summarizeTextDisabled
             ]}>
               ✅
+            </Text>
+          </TouchableOpacity>
+          
+          {/* Phase 3.2: Track Decisions button */}
+          <TouchableOpacity 
+            style={styles.summarizeButton}
+            onPress={handleTrackDecisions}
+            disabled={messages.length < 3}
+          >
+            <Text style={[
+              styles.summarizeText,
+              messages.length < 3 && styles.summarizeTextDisabled
+            ]}>
+              🎯
             </Text>
           </TouchableOpacity>
         </View>

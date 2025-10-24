@@ -26,12 +26,16 @@ import {
   ActionItem,
   searchMessages,
   SearchResponse,
+  trackDecisions,
+  Decision,
+  TrackDecisionsResponse,
 } from '../../src/services/firebase/functions';
 import { getConversation, getUser } from '../../src/services/firebase/firestore';
 import { auth } from '../../src/services/firebase/config';
 import Avatar from '../../src/components/shared/Avatar';
 import ActionItemsList from '../../src/components/ai/ActionItemsList';
 import SearchResults from '../../src/components/ai/SearchResults';
+import { DecisionTimeline } from '../../src/components/ai/DecisionTimeline';
 
 interface Participant {
   uid: string;
@@ -44,10 +48,13 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  type?: 'summary' | 'chat' | 'actions';
+  type?: 'summary' | 'chat' | 'actions' | 'decisions'; // Phase 3.2: Added 'decisions' type
   conversationId?: string;
   participants?: Participant[];
   actionItems?: ActionItem[];
+  decisions?: Decision[]; // Phase 3.2: Decision tracking data
+  messageCount?: number; // For tracking stats
+  encryptedCount?: number; // For tracking stats
 }
 
 const AI_MESSAGES_KEY = '@ai_messages';
@@ -203,6 +210,61 @@ export default function AIAssistant() {
       }, 100);
     }
   }, [params.requestActions, params.conversationId]);
+
+  // Handle incoming decision tracking request from URL params
+  // Phase 3.2: Decision Tracking
+  useEffect(() => {
+    if (params.requestDecisions === 'true' && params.conversationId && typeof params.conversationId === 'string') {
+      // Start loading and fetch decisions
+      setIsLoading(true);
+      
+      const fetchDecisions = async () => {
+        try {
+          // Track decisions
+          const response = await trackDecisions({ conversationId: params.conversationId as string });
+          
+          // Create message with decisions
+          const decisionsMessage: ChatMessage = {
+            id: `decisions_${Date.now()}`,
+            role: 'assistant',
+            content: `I found ${response.decisions.length} decision${response.decisions.length === 1 ? '' : 's'} in this conversation${response.encryptedCount ? ` (${response.encryptedCount} encrypted messages were not analyzed)` : ''}.`,
+            timestamp: new Date(),
+            type: 'decisions',
+            conversationId: params.conversationId as string,
+            decisions: response.decisions,
+            messageCount: response.messageCount,
+            encryptedCount: response.encryptedCount,
+          };
+          
+          setMessages((prev) => {
+            const updated = [...prev, decisionsMessage];
+            saveMessages(updated);
+            return updated;
+          });
+        } catch (error) {
+          console.error('[AI Assistant] Failed to track decisions:', error);
+          
+          const errorMessage: ChatMessage = {
+            id: `error_${Date.now()}`,
+            role: 'assistant',
+            content: "I'm sorry, I couldn't track decisions from that conversation. Please try again.",
+            timestamp: new Date(),
+          };
+          
+          setMessages((prev) => [...prev, errorMessage]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchDecisions();
+
+      // Clear the params after processing
+      setTimeout(() => {
+        router.setParams({ requestDecisions: undefined, conversationId: undefined });
+      }, 100);
+    }
+  }, [params.requestDecisions, params.conversationId]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -416,6 +478,17 @@ export default function AIAssistant() {
           </View>
         )}
         
+        {/* Display Decisions Timeline if present (Phase 3.2) */}
+        {item.type === 'decisions' && item.decisions && (
+          <View style={styles.decisionsContainer}>
+            <DecisionTimeline
+              decisions={item.decisions}
+              messageCount={item.messageCount || 0}
+              encryptedCount={item.encryptedCount}
+            />
+          </View>
+        )}
+        
         <Text
           style={[
             styles.timestamp,
@@ -603,6 +676,11 @@ const styles = StyleSheet.create({
     maxWidth: '95%',
   },
   actionItemsContainer: {
+    marginTop: 12,
+    minHeight: 200,
+    maxHeight: 600,
+  },
+  decisionsContainer: {
     marginTop: 12,
     minHeight: 200,
     maxHeight: 600,

@@ -184,3 +184,43 @@ export interface ExtractActionsResponse {
   timestamp: string;
 }
 
+// Phase 3.2: Decision Tracking
+export interface Decision {
+  id: string;
+  conversationId: string;
+  
+  // Core decision details
+  decision: string; // The decision that was made
+  decisionMaker: string; // Person who made the decision (name)
+  decisionMakerId?: string; // User ID if identifiable
+  
+  // Timing
+  decidedAt: string; // When the decision was made (from message timestamp)
+  extractedAt: string; // When this was extracted by AI
+  
+  // Context & Rationale
+  context: string; // Brief context of the decision
+  reasoning?: string; // Why the decision was made (if mentioned)
+  implications?: string; // Potential impacts or next steps
+  
+  // Source
+  sourceMessageIds: string[]; // The message(s) this was extracted from
+  messageSnippets?: string[]; // Relevant quotes from the conversation
+  
+  // Categorization
+  category?: 'strategic' | 'tactical' | 'operational' | 'personal';
+  impactLevel?: 'high' | 'medium' | 'low';
+  
+  // Metadata
+  confidence: number; // AI confidence score (0-1)
+  participants?: string[]; // Other people involved in the decision
+}
+
+// Phase 3.2: Response from trackDecisions Cloud Function
+export interface TrackDecisionsResponse {
+  decisions: Decision[];
+  messageCount: number;
+  encryptedCount?: number;
+  timestamp: string;
+}
+
