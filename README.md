@@ -1,10 +1,10 @@
 # MessageAI - Intelligent Mobile Messaging Platform
 
 **Gauntlet AI Cohort 3 - Project Two**  
-**Status:** ✅ **PHASE 2A: 100% COMPLETE + TESTED!** - All 3 AI Features Working! 🎉  
-**Timeline:** October 20-26, 2025 (7-day sprint) | **Days 1-3/7 ✅**  
+**Status:** ✅ **ALL 5 REQUIRED AI FEATURES COMPLETE!** 🎉  
+**Timeline:** October 20-26, 2025 (7-day sprint) | **Days 1-4/7 ✅**  
 **Target Score:** 95+/105 points  
-**Latest:** Phase 2.6 Integration Testing Complete! 5 Critical Tests Passed! Oct 23, 2025
+**Latest:** Phase 3.1 & 3.2 Complete! Priority Detection + Decision Tracking! Oct 24, 2025
 
 [![GitHub](https://img.shields.io/badge/GitHub-gratefulgabe5000%2FGauntlet--Project--Two-blue)](https://github.com/gratefulgabe5000/Gauntlet-Project-Two)
 
@@ -36,9 +36,9 @@ We've completed an **extensive planning phase** following the proven success pat
 | Document | Version | Lines | Status | Description |
 |----------|---------|-------|--------|-------------|
 | **PRD-MessageAI.md** | v2.0 | 3,519 | ✅ Complete | Product vision, features, rubric alignment, timeline |
-| **TaskList-MessageAI.md** | v2.0 | 1,610 | ✅ Phase 2A Complete | 436 tasks - Phase 2A complete (100%), 5 tests passed |
+| **TaskList-MessageAI.md** | v2.2 | 1,621 | ✅ Phase 3.1-3.2 Complete | 436 tasks - 5/5 AI features complete (100%) |
 | **TECH-TechStack.md** | v2.0 | 5,465 | ✅ Complete | Complete tech stack with setup instructions |
-| **WBS-MessageAI.md** | v2.0 | 1,910 | ✅ Phase 2A Complete | Phase 2A complete - all 6 AI subphases ✅ |
+| **WBS-MessageAI.md** | v2.0 | 1,910 | ✅ Phase 3.1-3.2 Complete | All 5 required AI features ✅ |
 
 #### Supporting Documents
 
@@ -63,10 +63,10 @@ We've completed an **extensive planning phase** following the proven success pat
 
 ---
 
-## 🎉 MVP + Phase 1B + Phase 2A Progress Summary (October 20-23, 2025)
+## 🎉 MVP + All AI Features Progress Summary (October 20-24, 2025)
 
-**Status:** ✅ **PHASE 2A: 100% COMPLETE + TESTED!** - All 3 AI Features Working & Tested! 🎉  
-**Days Worked:** Days 1-3 (Oct 20-23)  
+**Status:** ✅ **ALL 5 REQUIRED AI FEATURES COMPLETE!** 🎉  
+**Days Worked:** Days 1-4 (Oct 20-24)  
 **Phases Completed:** 
 - Phase 1 - MVP Core Messaging System (All 14 subsections ✅)
 - Phase 1B - WhatsApp-Parity Features (3/4 subsections ✅, 1 deferred)  
@@ -75,11 +75,13 @@ We've completed an **extensive planning phase** following the proven success pat
 - **Phase 2.3 - Thread Summarization (11/11 tasks ✅)**
 - **Phase 2.4 - Action Item Extraction (10/10 tasks ✅)**
 - **Phase 2.5 - Smart Search (8/8 tasks ✅)**
-- **Phase 2.6 - Integration Testing (5/5 critical tests ✅)** ← **NEW! Oct 23, 2025**
+- **Phase 2.6 - Integration Testing (5/5 critical tests ✅)**
+- **Phase 3.1 - Priority Message Detection (9/9 tasks ✅)** ← **NEW! Oct 24, 2025**
+- **Phase 3.2 - Decision Tracking (10/10 tasks ✅)** ← **NEW! Oct 24, 2025**
 
-**Gate Status:** Gate 2 (MVP Complete) ✅ PASSED | Gate 3 (WhatsApp Parity) ✅ PASSED | **Gate 4 (AI Foundation) ✅ PASSED (All 6 subphases complete)**
+**Gate Status:** Gate 2 (MVP Complete) ✅ PASSED | Gate 3 (WhatsApp Parity) ✅ PASSED | Gate 4 (AI Foundation) ✅ PASSED | **Gate 5 (All AI Features) ✅ PASSED**
 
-### ✅ Major Accomplishments (Days 1-3)
+### ✅ Major Accomplishments (Days 1-4)
 
 #### **Day 3B (October 23, 2025) - Phase 2.4 Complete!** 🆕 
 
@@ -247,6 +249,140 @@ We've completed an **extensive planning phase** following the proven success pat
 - Proper test documentation enables efficient bug tracking
 - Minor issues don't block progression to next phase
 - High user confidence level indicates production readiness
+
+---
+
+#### **Day 4 (October 24, 2025) - Phase 3.1 & 3.2 Complete! ALL 5 AI FEATURES DONE! 🎉** 🆕
+
+**Phase 3.1: Priority Message Detection ✅**
+
+- ✅ **Cloud Function & Firestore Trigger:** Created `detectPriority` endpoint and `onMessageCreated` trigger
+  - Automatic priority classification on every new message
+  - Privacy-preserving: Encrypted messages marked "normal" without AI analysis
+  - Efficiency: Very short messages (<5 chars) auto-classified as "low"
+  - Updates both message document AND conversation's `lastMessage.priority`
+  
+- ✅ **AI Prompt Engineering:** Refined GPT-4 prompt for balanced classification
+  - "NORMAL" as default category (most messages)
+  - "LOW" only for explicitly optional/FYI content
+  - "HIGH" for important + urgent combinations
+  - "URGENT" for critical, time-sensitive matters
+  - Includes confidence scoring and reasoning
+  
+- ✅ **Data Model:** Added priority fields to Message and Conversation models
+  - `priority: 'urgent' | 'high' | 'normal' | 'low'`
+  - `priorityConfidence: number` (0-1 scale)
+  - `priorityReasoning: string` (AI explanation)
+  - `priorityDetectedAt: string` (timestamp)
+  
+- ✅ **UI Components:** Built comprehensive priority visualization
+  - **MessageBubble:** Priority badges (🚨 Urgent, ⚠️ High, 📌 Low) next to sender name
+  - **ConversationCard:** Colored dots (red, yellow, gray) next to conversation name
+  - **ConversationList:** Dropdown filter (All, 🚨 Urgent, ⚠️ High, 💬 Normal, 📌 Low)
+  - Filter chips replaced with elegant dropdown menu
+  
+- ✅ **Android Notification Channels:** Priority-specific notification behavior
+  - **Urgent:** Critical importance, bypass DND, red light, long vibration
+  - **High:** High importance, yellow light, short vibration
+  - **Normal:** Default importance, green light, default sound
+  - **Low:** Low importance, no sound, no vibration
+  
+- ✅ **Testing & Debugging:**
+  - Fixed conversation list not updating (added `lastMessage.priority` to conversation doc)
+  - Refined AI prompt after user feedback (too many "LOW" classifications)
+  - Tested with multiple priority levels
+  - Verified filtering works correctly
+  - UI polish: Moved dots to front of name, converted chips to dropdown
+  
+**Total Day 4A Time:** ~2 hours (Phase 3.1)
+
+**Key Learnings:**
+- Firestore trigger must update BOTH message doc and conversation doc for UI consistency
+- AI prompt engineering requires iterative refinement based on real usage patterns
+- Default categorization is critical - "NORMAL" should be the baseline
+- Android notification channels provide granular control over notification behavior
+- UI polish (dropdowns vs chips) significantly improves user experience
+
+---
+
+**Phase 3.2: Decision Tracking ✅**
+
+- ✅ **Cloud Function:** Created `trackDecisions` endpoint in `functions/src/ai/trackDecisions.ts`
+  - Fetches up to 50 most recent messages from conversation
+  - Filters out encrypted messages (privacy-preserving)
+  - Passes messages to OpenAI for decision extraction
+  - Returns structured `Decision[]` with full metadata
+  
+- ✅ **AI Prompt Engineering:** Comprehensive GPT-4 prompt for decision extraction
+  - Clear definition of what qualifies as a "decision" (commitment, choice, resolution)
+  - Examples of decisions vs. discussions
+  - Structured JSON output with 13 fields per decision
+  - Confidence scoring (0-1) for extraction accuracy
+  - Context preservation with message snippets
+  
+- ✅ **Data Model:** Defined `Decision` and `TrackDecisionsResponse` interfaces
+  - Decision details (decision text, maker, timing)
+  - Context and rationale
+  - Source tracking (messageIds, snippets)
+  - Categorization (strategic/tactical/operational/personal)
+  - Impact assessment (high/medium/low)
+  - Confidence scoring
+  
+- ✅ **UI Component:** Built `DecisionTimeline` (`src/components/ai/DecisionTimeline.tsx`)
+  - Scrollable timeline view with `nestedScrollEnabled`
+  - Category badges (Strategic 🎯, Tactical ⚙️, Operational 📋, Personal 👤)
+  - Impact level indicators (High 🔥, Medium ⚡, Low 💡)
+  - Confidence scores with warnings for low confidence
+  - Context and reasoning display
+  - "View Message" buttons to navigate to source conversation
+  - Message snippet display for quick reference
+  
+- ✅ **Integration:** Added "Track Decisions" button (🎯) to conversation screen
+  - Navigates to AI Assistant with `requestDecisions` parameter
+  - Minimum 3 messages required
+  - Displays formatted decisions in purple-themed bubble
+  - "← Back to Conversation" button for easy navigation
+  
+- ✅ **Firestore Composite Index:** Created index for decision tracking queries
+  - Fields: `conversationId (ASC)`, `encrypted (ASC)`, `timestamp (DESC)`
+  - Enables efficient filtering of non-encrypted messages
+  - Deployed via `firebase deploy --only firestore:indexes`
+  
+- ✅ **Testing & UX Improvements:**
+  - Fixed scrolling: Added `nestedScrollEnabled={true}` to ScrollView
+  - Fixed heading: Changed "AI Assistant" to "🎯 Decisions"
+  - Fixed back button: Now returns to source conversation, not main screen
+  - Fixed "View Message" buttons: Correctly navigate to conversation
+  - Enhanced with "Back to Conversation" button below timeline
+  - Fixed text rendering error (← to {\u2190})
+  
+- ✅ **Enhancement Logged:** ENHANCE-001 in BUG tracker
+  - Future feature: Scroll to specific message and highlight it
+  - Estimated 2-3 hours implementation time
+  - Not blocking, nice-to-have UX improvement
+  
+**Total Day 4B Time:** ~2 hours (Phase 3.2)
+
+**Key Learnings:**
+- Nested scrolling in React Native requires `nestedScrollEnabled={true}` on ScrollView
+- Navigation context must be preserved when navigating between screens
+- AI decision extraction requires very clear prompt definition of "decision"
+- Confidence scoring helps users understand AI accuracy
+- "Back to X" buttons significantly improve navigation UX
+- Future enhancements should be logged systematically for prioritization
+
+---
+
+**Day 4 Total Time:** ~4 hours (Phases 3.1 + 3.2)
+
+**Day 4 Achievement:** ✅ **ALL 5 REQUIRED AI FEATURES COMPLETE!**
+1. ✅ Thread Summarization (Oct 22)
+2. ✅ Action Item Extraction (Oct 23)
+3. ✅ Smart Search (Oct 23)
+4. ✅ Priority Message Detection (Oct 24)
+5. ✅ Decision Tracking (Oct 24)
+
+**Ready for:** Phase 4 (Polish & Testing) or Optional Phase 3.3/3.4 (RAG/Multi-Step Agent)
 
 ---
 
@@ -1275,18 +1411,20 @@ npx expo start --clear --tunnel
 - Composite indexes for optimized queries
 - Tested on Android + iOS devices
 
-✅ **Phase 2A Complete + Tested:**
+✅ **ALL 5 Required AI Features Complete:**
 - ✅ Cloud Functions infrastructure (Firebase + OpenAI)
 - ✅ AI Chat Interface with GPT-4o-mini
 - ✅ Thread Summarization (comprehensive conversation summaries)
 - ✅ Action Item Extraction (priority, assignee, deadline detection)
 - ✅ Smart Search (AI-powered query expansion with semantic matching)
-- ✅ Integration Testing (5 critical tests passed, 2 bugs logged)
+- ✅ **Priority Message Detection (automatic classification with UI badges)**
+- ✅ **Decision Tracking (timeline view with context and navigation)**
+- ✅ Integration Testing (5 critical tests passed, 2 bugs logged, 1 enhancement logged)
 
 ⏳ **Next Phase:**
-- **Phase 3 (Advanced AI):** Priority Detection, Decision Tracking, Multi-Step Agent
-- **Alternative: Phase 4 (Polish & Testing):** Skip to final polish if time constrained
-- Advanced phases: Voice/Video calls, additional WhatsApp parity features
+- **Phase 4 (Polish & Testing):** ← **RECOMMENDED** - UX polish, error handling, optimization
+- **Alternative: Phase 3.3/3.4 (Optional Advanced AI):** RAG/Semantic Search OR Multi-Step Agent
+- Advanced optional phases: Voice/Video calls, additional WhatsApp parity features
 
 ---
 
@@ -1378,8 +1516,8 @@ This project is created for educational purposes as part of the Gauntlet AI prog
 
 ---
 
-**Status:** ✅ **PHASE 2A: 100% COMPLETE + TESTED!** - All 3 AI Features Working & Tested! 🎉  
-**Latest:** Phase 2.6 (Integration Testing) Complete - All Critical Tests Passed! - Oct 23, 2025 🚀  
-**Next Step:** Phase 3 (Advanced AI) or Phase 4 (Polish & Testing)  
-**Progress:** Phase 1 (MVP) ✅ | Phase 1B (WhatsApp Parity) ✅ | Phase 2A (AI Foundation + Testing) ✅  
-**Achievement:** 3 AI Features | Thread Summarization + Action Items + Smart Search | 5 Critical Tests Passed | 2 UI/UX Bugs Logged | Production Ready | Android + iOS
+**Status:** ✅ **ALL 5 REQUIRED AI FEATURES COMPLETE!** 🎉  
+**Latest:** Phase 3.1 & 3.2 Complete - Priority Detection + Decision Tracking! - Oct 24, 2025 🚀  
+**Next Step:** Phase 4 (Polish & Testing) ← **RECOMMENDED**  
+**Progress:** Phase 1 (MVP) ✅ | Phase 1B (WhatsApp Parity) ✅ | Phase 2A (AI Foundation) ✅ | Phase 3.1-3.2 (All AI Features) ✅  
+**Achievement:** 5/5 AI Features Complete | Thread Summarization + Action Items + Smart Search + Priority Detection + Decision Tracking | 5 Critical Tests Passed | 2 UI/UX Bugs + 1 Enhancement Logged | Production Ready | Android + iOS

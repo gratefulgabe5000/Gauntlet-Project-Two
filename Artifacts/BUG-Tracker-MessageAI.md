@@ -10,11 +10,12 @@
 
 ## 📊 QUICK SUMMARY
 
-**Total Bugs:** 6 (3 Fixed ✅, 2 New for Phase 4)  
+**Total Bugs:** 6 (3 Fixed ✅, 3 Deferred for Phase 4)  
+**Enhancements:** 1 💡 (Future)  
 **Known Limitations:** 1 📋  
 **Blocking Issues:** 0 🟢  
-**Production Status:** ✅ MVP + 3 AI Features Complete  
-**Demo Ready:** ✅ Ready (3 deferred for Phase 4 Polish)  
+**Production Status:** ✅ MVP + 5 AI Features Complete (Phase 3.2)  
+**Demo Ready:** ✅ Ready (3 bugs + 1 enhancement deferred)  
 
 ### Functional Bugs Breakdown
 - **Critical:** 0 bugs ✅
@@ -43,6 +44,7 @@
 | BUG-005 | One-on-one conversations show "Unknown" name | 🟠 High | Data/Display | ✅ Fixed | - |
 | BUG-006 | Message not highlighted after search navigation | 🟢 Low | UI/Visual | ⏸️ Deferred | 1-2 hours |
 | BUG-007 | Inconsistent BACK button navigation from AI features | 🟡 Medium | Navigation/UX | ⏸️ Deferred | 2-3 hours |
+| ENHANCE-001 | Decision Timeline: Scroll to specific message from "View Message" | 💡 Enhancement | Feature | ⏸️ Future | 2-3 hours |
 | LIMIT-001 | Push notifications not supported in Expo Go (Android SDK 53+) | 📋 Limitation | Platform | Documented | N/A |
 
 **Legend:**
@@ -1105,6 +1107,84 @@ When navigating from search results to a conversation, the target message is not
 
 ---
 
+## 💡 ENHANCE-001: Decision Timeline - Scroll to Specific Message
+
+**Priority:** 💡 Enhancement  
+**Category:** Feature/UX  
+**Status:** ⏸️ Future Enhancement  
+**Discovered:** October 24, 2025 (Phase 3.2 Testing)  
+**Related Feature:** Decision Tracking (Phase 3.2)
+
+### Description
+"View Message" buttons in the Decision Timeline currently navigate to the conversation but don't scroll to or highlight the specific message where the decision was made. This enhancement would add message-specific navigation.
+
+### Current Behavior
+1. User taps "View Message" button in Decision Timeline
+2. Navigates to the conversation
+3. User is at the top of the conversation
+4. User must manually scroll to find the decision message
+
+### Desired Behavior
+1. User taps "View Message" button in Decision Timeline
+2. Navigates to the conversation
+3. **Automatically scrolls to the specific message**
+4. **Highlights the message temporarily** (e.g., yellow flash/border)
+5. User can see the decision in context immediately
+
+### Implementation Notes
+**Phase 3.2 (Current):**
+- ✅ "View Message" button navigates to conversation
+- ✅ `conversationId` is passed
+- ❌ `messageId` is NOT passed to the conversation screen
+- ❌ No scrolling logic implemented
+- ❌ No message highlighting implemented
+
+**Future Implementation:**
+1. **Pass messageId as navigation parameter:**
+   ```typescript
+   router.push({
+     pathname: `/conversation/${decision.conversationId}`,
+     params: { highlightMessageId: decision.sourceMessageIds[0] }
+   });
+   ```
+
+2. **Update conversation screen to handle highlight param:**
+   - Read `highlightMessageId` from route params
+   - Scroll to message using FlatList `scrollToIndex` or `scrollToOffset`
+   - Add temporary highlight styling (yellow glow/border)
+   - Fade out highlight after 2-3 seconds
+
+3. **Handle edge cases:**
+   - Message not found (deleted/encrypted)
+   - Message not yet loaded (pagination)
+   - Multiple source messages (highlight all or just first?)
+
+### Benefits
+- **Better UX:** User immediately sees the decision context
+- **Saves time:** No manual scrolling needed
+- **Professional feel:** Polished interaction like modern messaging apps
+- **Consistency:** Matches similar features (e.g., reply jumps, search results)
+
+### Estimated Implementation Time
+- Add messageId to navigation: **15 minutes**
+- Implement scroll-to-message logic: **1 hour**
+- Add highlight animation: **45 minutes**
+- Test edge cases: **30 minutes**
+- **Total: 2-3 hours**
+
+### Priority Justification
+- **Not blocking:** Current behavior works (navigates to conversation)
+- **Nice-to-have:** Enhances UX but not critical
+- **Future enhancement:** Can be implemented after MVP/Phase 4
+- **Low risk:** Isolated feature, won't impact existing functionality
+
+### Related Code
+- `src/components/ai/DecisionTimeline.tsx` - View Message button handler
+- `app/conversation/[id].tsx` - Conversation screen (needs update)
+- `src/components/messages/MessageList.tsx` - Message rendering (needs highlight)
+
+---
+
 ## 🐛 BUG-007: Inconsistent BACK Button Navigation from AI Features
 
 **Priority:** 🟡 Medium  
@@ -1196,6 +1276,14 @@ const handleBack = () => {
 
 ## 📅 CHANGELOG
 
+### October 24, 2025
+- **Phase 3.2 Decision Tracking Complete**
+  - Added ENHANCE-001: Decision Timeline - Scroll to specific message (Enhancement)
+  - Feature request: Navigate to specific message and highlight it from Decision Timeline
+  - Future enhancement - not blocking any phases
+  - Estimated 2-3 hours implementation time
+  - Total: 6 bugs (3 fixed, 3 deferred) + 1 enhancement (future)
+
 ### October 23, 2025
 - **Phase 2.6 Integration Testing Complete**
   - Added BUG-006: Message not highlighted after search navigation (Low priority)
@@ -1259,7 +1347,7 @@ const handleBack = () => {
 
 
 
-**Last Updated:** October 23, 2025  
+**Last Updated:** October 24, 2025  
 **Next Review:** During development and testing phases  
 **Status:** Active tracking - Ready for bug logging ✅  
 
@@ -1292,7 +1380,7 @@ const handleBack = () => {
 
 
 
-**Last Updated:** October 23, 2025  
+**Last Updated:** October 24, 2025  
 **Next Review:** During development and testing phases  
 **Status:** Active tracking - Ready for bug logging ✅  
 
