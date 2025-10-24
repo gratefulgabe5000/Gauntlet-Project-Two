@@ -28,6 +28,11 @@
     "scheme": "messageai",
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "updates": {
+      "enabled": false,
+      "checkAutomatically": "NEVER",
+      "fallbackToCacheTimeout": 0
+    }
   }
 }

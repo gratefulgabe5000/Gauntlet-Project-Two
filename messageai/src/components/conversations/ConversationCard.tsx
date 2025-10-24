@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Avatar from '../shared/Avatar';
 import type { ConversationSummary } from '../../types/models';
+import { decryptMessage } from '../../services/encryption.service';
 
 interface ConversationCardProps {
   conversation: ConversationSummary;
@@ -9,6 +10,28 @@ interface ConversationCardProps {
 }
 
 export default function ConversationCard({ conversation, onPress }: ConversationCardProps) {
+  const [decryptedContent, setDecryptedContent] = useState<string | null>(null);
+
+  // Decrypt last message if encrypted
+  useEffect(() => {
+    async function loadDecryptedContent() {
+      if (conversation.lastMessage?.encrypted && conversation.lastMessage?.encryptedText) {
+        try {
+          const decrypted = await decryptMessage(
+            conversation.lastMessage.encryptedText,
+            conversation.id
+          );
+          setDecryptedContent(decrypted);
+        } catch (error) {
+          console.error('Error decrypting last message:', error);
+          setDecryptedContent('[Encrypted Message]');
+        }
+      }
+    }
+
+    loadDecryptedContent();
+  }, [conversation.lastMessage?.encryptedText, conversation.id]);
+
   const formatTimestamp = (timestamp: string) => {
     try {
       const date = new Date(timestamp);
@@ -94,7 +117,9 @@ export default function ConversationCard({ conversation, onPress }: Conversation
 
         <View style={styles.messageRow}>
           <Text style={styles.lastMessage} numberOfLines={1}>
-            {conversation.lastMessage?.content || 'No messages yet'}
+            {conversation.lastMessage?.encrypted 
+              ? `🔒 ${decryptedContent || 'Decrypting...'}` 
+              : conversation.lastMessage?.content || 'No messages yet'}
           </Text>
           {conversation.unreadCount > 0 && (
             <View style={styles.badge}>

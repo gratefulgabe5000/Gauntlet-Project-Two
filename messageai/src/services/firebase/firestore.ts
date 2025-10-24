@@ -233,14 +233,22 @@ export async function sendMessage(
     const docRef = await addDoc(messagesCollection, messageData);
 
     // Update conversation's last message
+    const lastMessageUpdate: any = {
+      content: request.content, // This is encrypted content in Firestore (or plain if not encrypted)
+      senderId,
+      senderName,
+      timestamp: new Date().toISOString(),
+      type: request.type,
+      encrypted: request.encrypted || false, // Phase 1B: Add encryption flag
+    };
+    
+    // Only add encryptedText if message is encrypted (avoid undefined in Firestore)
+    if (request.encrypted) {
+      lastMessageUpdate.encryptedText = request.content; // Phase 1B: Store encrypted content for decryption
+    }
+    
     await updateDoc(doc(conversationsCollection, request.conversationId), {
-      lastMessage: {
-        content: request.content,
-        senderId,
-        senderName,
-        timestamp: new Date().toISOString(),
-        type: request.type,
-      },
+      lastMessage: lastMessageUpdate,
       updatedAt: new Date().toISOString(),
     });
 

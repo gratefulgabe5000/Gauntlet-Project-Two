@@ -108,6 +108,8 @@ export interface ConversationSummary {
     timestamp: string;
     senderId: string;
     priority?: 'urgent' | 'high' | 'normal' | 'low'; // Phase 3.1: Message priority
+    encrypted?: boolean; // Phase 1B: Encryption flag
+    encryptedText?: string; // Phase 1B: Encrypted content (for storage)
   } | null;
   unreadCount: number;
   participants: User[];
