@@ -18,6 +18,7 @@ export default function Conversations() {
   const [loading, setLoading] = useState(true);
   const [isScreenFocused, setIsScreenFocused] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
   const backPressCount = useRef(0);
   const backPressTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -143,13 +144,34 @@ export default function Conversations() {
       
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Messages</Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.title}>Messages</Text>
+          {/* Priority Filter Button (Phase 3.1) */}
+          <TouchableOpacity 
+            style={styles.filterButton}
+            onPress={() => setShowFilterMenu(true)}
+          >
+            <Text style={styles.filterButtonText}>
+              {priorityFilter === 'all' && 'All'}
+              {priorityFilter === 'urgent' && '🚨 Urgent'}
+              {priorityFilter === 'high' && '⚠️ High'}
+              {priorityFilter === 'normal' && '💬 Normal'}
+              {priorityFilter === 'low' && '📌 Low'}
+            </Text>
+            <Text style={styles.filterButtonArrow}>▼</Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.headerButtons}>
           <TouchableOpacity 
-            style={styles.groupButton}
+            style={styles.groupButtonContainer}
             onPress={() => router.push('/(tabs)/new-group')}
           >
-            <Text style={styles.groupButtonText}>👥</Text>
+            <View style={styles.groupButton}>
+              <Text style={styles.groupButtonText}>👥</Text>
+              <View style={styles.plusBadge}>
+                <Text style={styles.plusBadgeText}>+</Text>
+              </View>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.newButton}
@@ -160,49 +182,73 @@ export default function Conversations() {
         </View>
       </View>
 
-      {/* Priority Filter Chips (Phase 3.1) */}
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={[styles.filterChip, priorityFilter === 'all' && styles.filterChipActive]}
-          onPress={() => setPriorityFilter('all')}
-        >
-          <Text style={[styles.filterChipText, priorityFilter === 'all' && styles.filterChipTextActive]}>
-            All
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterChip, priorityFilter === 'urgent' && styles.filterChipActive, styles.filterChipUrgent]}
-          onPress={() => setPriorityFilter('urgent')}
-        >
-          <Text style={[styles.filterChipText, priorityFilter === 'urgent' && styles.filterChipTextActive]}>
-            🚨 Urgent
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterChip, priorityFilter === 'high' && styles.filterChipActive, styles.filterChipHigh]}
-          onPress={() => setPriorityFilter('high')}
-        >
-          <Text style={[styles.filterChipText, priorityFilter === 'high' && styles.filterChipTextActive]}>
-            ⚠️ High
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterChip, priorityFilter === 'normal' && styles.filterChipActive]}
-          onPress={() => setPriorityFilter('normal')}
-        >
-          <Text style={[styles.filterChipText, priorityFilter === 'normal' && styles.filterChipTextActive]}>
-            Normal
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterChip, priorityFilter === 'low' && styles.filterChipActive, styles.filterChipLow]}
-          onPress={() => setPriorityFilter('low')}
-        >
-          <Text style={[styles.filterChipText, priorityFilter === 'low' && styles.filterChipTextActive]}>
-            📌 Low
-          </Text>
-        </TouchableOpacity>
-      </View>
+      {/* Priority Filter Dropdown Menu (Phase 3.1) */}
+      {showFilterMenu && (
+        <>
+          <TouchableOpacity 
+            style={styles.dropdownOverlay}
+            activeOpacity={1}
+            onPress={() => setShowFilterMenu(false)}
+          />
+          <View style={styles.filterDropdown}>
+            <TouchableOpacity
+              style={[styles.filterDropdownItem, priorityFilter === 'all' && styles.filterDropdownItemActive]}
+              onPress={() => {
+                setPriorityFilter('all');
+                setShowFilterMenu(false);
+              }}
+            >
+              <Text style={[styles.filterDropdownText, priorityFilter === 'all' && styles.filterDropdownTextActive]}>
+                All Messages
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterDropdownItem, priorityFilter === 'urgent' && styles.filterDropdownItemActive]}
+              onPress={() => {
+                setPriorityFilter('urgent');
+                setShowFilterMenu(false);
+              }}
+            >
+              <Text style={[styles.filterDropdownText, priorityFilter === 'urgent' && styles.filterDropdownTextActive]}>
+                🚨 Urgent
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterDropdownItem, priorityFilter === 'high' && styles.filterDropdownItemActive]}
+              onPress={() => {
+                setPriorityFilter('high');
+                setShowFilterMenu(false);
+              }}
+            >
+              <Text style={[styles.filterDropdownText, priorityFilter === 'high' && styles.filterDropdownTextActive]}>
+                ⚠️ High Priority
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterDropdownItem, priorityFilter === 'normal' && styles.filterDropdownItemActive]}
+              onPress={() => {
+                setPriorityFilter('normal');
+                setShowFilterMenu(false);
+              }}
+            >
+              <Text style={[styles.filterDropdownText, priorityFilter === 'normal' && styles.filterDropdownTextActive]}>
+                💬 Normal
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterDropdownItem, priorityFilter === 'low' && styles.filterDropdownItemActive]}
+              onPress={() => {
+                setPriorityFilter('low');
+                setShowFilterMenu(false);
+              }}
+            >
+              <Text style={[styles.filterDropdownText, priorityFilter === 'low' && styles.filterDropdownTextActive]}>
+                📌 Low Priority
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
 
       {/* Conversation List */}
       <ConversationList
@@ -222,7 +268,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: 16,
     paddingTop: 60,
     paddingBottom: 16,
@@ -230,14 +276,40 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
   },
+  headerLeft: {
+    flex: 1,
+  },
   title: {
     fontSize: 34,
     fontWeight: 'bold',
     color: '#000',
+    marginBottom: 8,
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#F8F8F8',
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    gap: 6,
+  },
+  filterButtonText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#007AFF',
+  },
+  filterButtonArrow: {
+    fontSize: 10,
+    color: '#007AFF',
   },
   headerButtons: {
     flexDirection: 'row',
     gap: 12,
+  },
+  groupButtonContainer: {
+    position: 'relative',
   },
   groupButton: {
     width: 36,
@@ -250,6 +322,28 @@ const styles = StyleSheet.create({
   groupButtonText: {
     fontSize: 18,
   },
+  plusBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  plusBadgeText: {
+    fontSize: 11,
+    fontWeight: '300',
+    color: '#fff',
+    lineHeight: 11,
+    textAlign: 'center',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
   newButton: {
     width: 36,
     height: 36,
@@ -259,9 +353,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   newButtonText: {
-    fontSize: 24,
-    fontWeight: '400',
+    fontSize: 22,
+    fontWeight: '300',
     color: '#fff',
+    lineHeight: 22,
+    textAlign: 'center',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   offlineBanner: {
     backgroundColor: '#FF9500',
@@ -274,44 +372,44 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  // Priority filter styles (Phase 3.1)
-  filterContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#F8F8F8',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-    gap: 8,
+  // Priority filter dropdown styles (Phase 3.1)
+  dropdownOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
   },
-  filterChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+  filterDropdown: {
+    position: 'absolute',
+    top: 136, // Below the filter button
+    left: 16,
     backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#D0D0D0',
+    borderRadius: 12,
+    minWidth: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    zIndex: 1000,
   },
-  filterChipActive: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+  filterDropdownItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
-  filterChipUrgent: {
-    // Will have red border when active
+  filterDropdownItemActive: {
+    backgroundColor: '#F0F8FF',
   },
-  filterChipHigh: {
-    // Will have orange border when active
+  filterDropdownText: {
+    fontSize: 15,
+    color: '#000',
   },
-  filterChipLow: {
-    // Will have green border when active
-  },
-  filterChipText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#666',
-  },
-  filterChipTextActive: {
-    color: '#fff',
+  filterDropdownTextActive: {
+    color: '#007AFF',
     fontWeight: '600',
   },
 });

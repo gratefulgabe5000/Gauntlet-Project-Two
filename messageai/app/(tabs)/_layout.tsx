@@ -43,6 +43,13 @@ export default function TabsLayout() {
           href: null, // Hide from tab bar
         }}
       />
+      <Tabs.Screen
+        name="new-group"
+        options={{
+          title: 'New Group',
+          href: null, // Hide from tab bar
+        }}
+      />
     </Tabs>
   );
 }

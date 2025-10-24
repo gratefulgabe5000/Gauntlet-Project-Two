@@ -219,10 +219,16 @@ export default function ConversationDetail() {
             ? `${newMsg.senderName || sender?.displayName || 'Someone'} sent a photo`
             : newMsg.content;
 
-          await showLocalNotification(title, body, {
-            conversationId: id,
-            messageId: newMsg.id,
-          });
+          // Phase 3.1: Pass message priority for enhanced notifications
+          await showLocalNotification(
+            title, 
+            body, 
+            {
+              conversationId: id,
+              messageId: newMsg.id,
+            },
+            newMsg.priority as 'urgent' | 'high' | 'normal' | 'low' | undefined
+          );
         }
       }
 

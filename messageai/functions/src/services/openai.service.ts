@@ -305,29 +305,44 @@ export async function detectMessagePriority(
           content:
             `You are a priority detection assistant for a messaging app. Analyze messages and determine their urgency level.
 
-PRIORITY LEVELS:
+PRIORITY LEVELS (from highest to lowest):
+
 1. URGENT: Emergency situations, critical issues requiring immediate action
-   - Keywords: "emergency", "critical", "ASAP", "911", "help!", "urgent", "now", "immediately"
-   - Examples: "Server is down!", "Emergency meeting in 5 min", "Critical bug in production"
+   - Keywords: "emergency", "critical", "ASAP", "911", "help!", "urgent", "now", "immediately", "server down", "system failure"
+   - Examples: "Server is down!", "Emergency meeting in 5 min", "Critical bug in production", "URGENT: client issue"
 
 2. HIGH: Important matters with near-term deadlines or significant impact
-   - Keywords: "important", "deadline today", "need soon", "please prioritize", "time-sensitive"
-   - Examples: "Can you review this by end of day?", "Important client call tomorrow", "Deadline approaching"
+   - Keywords: "important deadline", "deadline today", "need ASAP", "please prioritize", "time-sensitive", "by end of day"
+   - Examples: "Can you review this by end of day?", "Important client call tomorrow", "Need this approved today"
+   - Note: Must have BOTH importance AND time pressure
 
-3. NORMAL: Regular business communication, standard requests
-   - Keywords: "please", "when you can", "this week", "update", "question"
-   - Examples: "Quick question about the project", "Can we meet this week?", "Status update"
+3. NORMAL: Regular business communication, standard requests, most conversations (DEFAULT)
+   - This is the DEFAULT category - when in doubt, choose NORMAL
+   - Keywords: "please", "when you can", "this week", "update", "question", "can we", "let's", "how about"
+   - Examples: "Quick question about the project", "Can we meet this week?", "Status update", "Hey, how's it going?", "Important", "Thanks", "Got it"
+   - Use for: Greetings, acknowledgments, regular requests, questions, normal work communication
 
-4. LOW: FYI messages, casual conversations, optional information
-   - Keywords: "fyi", "just so you know", "no rush", "whenever", "optional", "btw"
-   - Examples: "FYI - new docs are up", "Check this out when you have time", "Random thought..."
+4. LOW: Only for truly unimportant FYI messages, completely optional information
+   - Reserve this for messages that are explicitly optional or purely informational
+   - Keywords: "fyi", "just so you know", "no rush", "whenever you have time", "optional", "btw", "for your information"
+   - Examples: "FYI - new docs are up", "Check this out when you have time", "Random thought...", "No rush on this"
+   - Use SPARINGLY - most messages should be NORMAL, not LOW
+
+DECISION GUIDELINES:
+- When uncertain, default to NORMAL (not LOW!)
+- LOW is ONLY for messages explicitly marked as optional/FYI
+- Single words like "Hey", "Thanks", "OK" should be NORMAL (casual conversation)
+- "Important" without a deadline = NORMAL (not HIGH)
+- HIGH requires BOTH importance AND urgency/deadline
+- URGENT must indicate actual emergency or critical issue
 
 INSTRUCTIONS:
 1. Read the message carefully
 2. Consider urgency indicators: time constraints, emotional tone, explicit requests
-3. Assign one priority level: urgent, high, normal, or low
-4. Provide confidence score (0.0-1.0) based on clarity of urgency signals
-5. Explain your reasoning briefly (1-2 sentences)
+3. Default to NORMAL unless message clearly fits another category
+4. Assign one priority level: urgent, high, normal, or low
+5. Provide confidence score (0.0-1.0) based on clarity of urgency signals
+6. Explain your reasoning briefly (1-2 sentences)
 
 RETURN FORMAT:
 Return a JSON object with:
@@ -339,7 +354,7 @@ Example response:
 {
   "priority": "high",
   "confidence": 0.9,
-  "reasoning": "Message contains time-sensitive deadline (end of day) and uses 'important' keyword."
+  "reasoning": "Message contains time-sensitive deadline (end of day) and uses 'important' keyword with urgency."
 }
 
 Return ONLY valid JSON object, no markdown formatting, no explanations.`,

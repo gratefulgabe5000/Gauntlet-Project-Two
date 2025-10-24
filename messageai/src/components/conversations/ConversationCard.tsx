@@ -71,10 +71,7 @@ export default function ConversationCard({ conversation, onPress }: Conversation
       <View style={styles.content}>
         <View style={styles.header}>
           <View style={styles.nameRow}>
-            <Text style={styles.name} numberOfLines={1}>
-              {getDisplayName()}
-            </Text>
-            {/* Priority indicator (Phase 3.1) */}
+            {/* Priority indicator (Phase 3.1) - moved to front */}
             {conversation.lastMessage?.priority && conversation.lastMessage.priority !== 'normal' && (
               <View style={[
                 styles.priorityDot,
@@ -83,6 +80,9 @@ export default function ConversationCard({ conversation, onPress }: Conversation
                 conversation.lastMessage.priority === 'low' && styles.priorityDotLow,
               ]} />
             )}
+            <Text style={styles.name} numberOfLines={1}>
+              {getDisplayName()}
+            </Text>
           </View>
           {conversation.lastMessage && (
             <Text style={styles.timestamp}>
@@ -139,12 +139,12 @@ const styles = StyleSheet.create({
     color: '#000',
     flexShrink: 1,
   },
-  // Priority indicator dot (Phase 3.1)
+  // Priority indicator dot (Phase 3.1) - now at front
   priorityDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginLeft: 2,
+    marginRight: 4,
   },
   priorityDotUrgent: {
     backgroundColor: '#FF3B30',
