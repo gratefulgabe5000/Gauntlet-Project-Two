@@ -122,14 +122,18 @@ export function DecisionTimeline({
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={styles.scrollContent}
+      nestedScrollEnabled={true}
+    >
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>
-          {decisions.length} Decision{decisions.length !== 1 ? 's' : ''} Found
+          🎯 Decisions
         </Text>
         <Text style={styles.headerSubtitle}>
-          From {messageCount} message{messageCount !== 1 ? 's' : ''}
+          {decisions.length} decision{decisions.length !== 1 ? 's' : ''} from {messageCount} message{messageCount !== 1 ? 's' : ''}
           {encryptedCount && encryptedCount > 0 && ` (${encryptedCount} encrypted excluded)`}
         </Text>
       </View>

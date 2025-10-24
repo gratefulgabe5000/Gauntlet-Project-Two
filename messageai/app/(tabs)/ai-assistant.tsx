@@ -421,6 +421,7 @@ export default function AIAssistant() {
     const isUser = item.role === 'user';
     const isSummary = item.type === 'summary';
     const isActions = item.type === 'actions';
+    const isDecisions = item.type === 'decisions'; // Phase 3.2
 
     // Filter out current user from participants display
     const currentUserId = auth.currentUser?.uid;
@@ -433,12 +434,13 @@ export default function AIAssistant() {
           isUser ? styles.userBubble : styles.aiBubble,
           isSummary && styles.summaryBubble,
           isActions && styles.actionsBubble,
+          isDecisions && styles.decisionsBubble, // Phase 3.2
         ]}
       >
         {!isUser && (
           <View style={styles.messageHeader}>
             <Text style={styles.aiLabel}>
-              {isSummary ? '📊 Conversation Summary' : isActions ? '📋 Action Items' : '🤖 AI Assistant'}
+              {isSummary ? '📊 Conversation Summary' : isActions ? '📋 Action Items' : isDecisions ? '🎯 Decisions' : '🤖 AI Assistant'}
             </Text>
             {isSummary && otherParticipants.length > 0 && (
               <View style={styles.participantsContainer}>
@@ -471,22 +473,66 @@ export default function AIAssistant() {
           {item.content}
         </Text>
         
+        {/* Back to Conversation button for Summary */}
+        {isSummary && item.conversationId && (
+          <TouchableOpacity
+            style={styles.backToConversationButton}
+            onPress={() => {
+              router.push(`/conversation/${item.conversationId}`);
+            }}
+          >
+            <Text style={styles.backToConversationText}>
+              ← Back to Conversation
+            </Text>
+          </TouchableOpacity>
+        )}
+        
         {/* Display Action Items if present */}
         {isActions && item.actionItems && item.actionItems.length > 0 && (
-          <View style={styles.actionItemsContainer}>
-            <ActionItemsList actionItems={item.actionItems} />
-          </View>
+          <>
+            {/* Back to Conversation button for Actions */}
+            {item.conversationId && (
+              <TouchableOpacity
+                style={styles.backToConversationButton}
+                onPress={() => {
+                  router.push(`/conversation/${item.conversationId}`);
+                }}
+              >
+                <Text style={styles.backToConversationText}>
+                  ← Back to Conversation
+                </Text>
+              </TouchableOpacity>
+            )}
+            <View style={styles.actionItemsContainer}>
+              <ActionItemsList actionItems={item.actionItems} />
+            </View>
+          </>
         )}
         
         {/* Display Decisions Timeline if present (Phase 3.2) */}
         {item.type === 'decisions' && item.decisions && (
-          <View style={styles.decisionsContainer}>
-            <DecisionTimeline
-              decisions={item.decisions}
-              messageCount={item.messageCount || 0}
-              encryptedCount={item.encryptedCount}
-            />
-          </View>
+          <>
+            {/* Back to Conversation button */}
+            {item.conversationId && (
+              <TouchableOpacity
+                style={styles.backToConversationButton}
+                onPress={() => {
+                  router.push(`/conversation/${item.conversationId}`);
+                }}
+              >
+                <Text style={styles.backToConversationText}>
+                  ← Back to Conversation
+                </Text>
+              </TouchableOpacity>
+            )}
+            <View style={styles.decisionsContainer}>
+              <DecisionTimeline
+                decisions={item.decisions}
+                messageCount={item.messageCount || 0}
+                encryptedCount={item.encryptedCount}
+              />
+            </View>
+          </>
         )}
         
         <Text
@@ -675,6 +721,12 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     maxWidth: '95%',
   },
+  decisionsBubble: {
+    backgroundColor: '#F5F3FF',
+    borderColor: '#8B5CF6',
+    borderWidth: 2,
+    maxWidth: '95%',
+  },
   actionItemsContainer: {
     marginTop: 12,
     minHeight: 200,
@@ -684,6 +736,20 @@ const styles = StyleSheet.create({
     marginTop: 12,
     minHeight: 200,
     maxHeight: 600,
+  },
+  backToConversationButton: {
+    backgroundColor: '#8B5CF6',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 12,
+    marginBottom: 8,
+    alignItems: 'center',
+  },
+  backToConversationText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   messageHeader: {
     flexDirection: 'row',
