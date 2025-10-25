@@ -330,8 +330,8 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
     const { extractActionItems } = await import('../services/openai.service');
     const allActionItems: any[] = [];
 
-    // Process up to 10 conversations (increased to find more action items)
-    const conversationsToProcess = targetConversationIds.slice(0, 10);
+    // Process ALL conversations (removed limit per user request)
+    const conversationsToProcess = targetConversationIds;
     
     functions.logger.info('🟡 Starting extraction from conversations', {
       totalConversations: targetConversationIds.length,

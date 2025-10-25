@@ -532,7 +532,13 @@ Return ONLY valid JSON object, no markdown formatting, no explanations.`,
     // Parse JSON response
     let parsedResponse: any;
     try {
-      parsedResponse = JSON.parse(content);
+      // Strip markdown code blocks if present (```json ... ```)
+      let cleanedContent = content.trim();
+      if (cleanedContent.startsWith('```')) {
+        cleanedContent = cleanedContent.replace(/^```(?:json)?\s*\n?/g, '').replace(/\n?```\s*$/g, '');
+      }
+      
+      parsedResponse = JSON.parse(cleanedContent);
       functions.logger.info('Parsed action items response', {
         hasActionItems: !!parsedResponse.actionItems,
         actionItemsType: typeof parsedResponse.actionItems,
@@ -543,7 +549,9 @@ Return ONLY valid JSON object, no markdown formatting, no explanations.`,
         content,
         parseError: parseError instanceof Error ? parseError.message : 'Unknown error',
       });
-      throw new Error('Failed to parse AI response as JSON');
+      // Return empty array instead of throwing - graceful degradation
+      functions.logger.warn('Returning empty action items due to parse error');
+      return [];
     }
 
     // Extract action items array (handle different response structures)
