@@ -298,7 +298,7 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
       });
 
       // Filter to only conversations user has access to
-      targetConversationIds = targetConversationIds.filter((id) =>
+      targetConversationIds = targetConversationIds.filter((id: string) =>
         userConversationIds.includes(id)
       );
     }
@@ -472,7 +472,7 @@ export const getConversationDecisions = functions.https.onCall(async (data, cont
         conversationMap.set(doc.id, data.name || 'Direct Chat');
       });
 
-      targetConversationIds = targetConversationIds.filter((id) =>
+      targetConversationIds = targetConversationIds.filter((id: string) =>
         userConversationIds.includes(id)
       );
     }
@@ -726,12 +726,6 @@ export const searchAllConversations = functions.https.onCall(async (data, contex
       limit,
     });
 
-    // Import and use existing search function
-    const searchModule = await import('./search');
-    
-    // Call the existing search function (it's already exported but we need to call it properly)
-    // Since we can't directly call an exported Cloud Function, we'll replicate the search logic
-    
     // Get user's conversations
     const conversationsSnapshot = await admin
       .firestore()
