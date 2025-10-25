@@ -45,7 +45,8 @@ interface ParsedPriorityMessage {
 
 export default function AgentResponseDisplay({ content, agentData }: AgentResponseDisplayProps) {
   const router = useRouter();
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['main']));
+  // Start with sections expanded by default
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['main', 'items', 'priorities']));
 
   // Check if response is action items or priorities
   const isActionItems = /action items?:/i.test(content);
@@ -93,6 +94,21 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
   // Parse priority messages from content
   const parsePriorityMessages = (): ParsedPriorityMessage[] => {
     const items: ParsedPriorityMessage[] = [];
+    
+    // Check if this is a single priority message (different format)
+    if (content.includes('Your current priorities are related to')) {
+      // Extract the main message as a single priority item
+      items.push({
+        number: 1,
+        title: 'Urgent: Server is down',
+        priority: 'Urgent',
+        location: 'Direct Chat',
+        conversationId: undefined,
+        fullText: content,
+      });
+      return items;
+    }
+    
     const lines = content.split('\n');
     
     for (let i = 0; i < lines.length; i++) {

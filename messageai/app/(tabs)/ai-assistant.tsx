@@ -334,12 +334,15 @@ export default function AIAssistant() {
       /show.*priorit/i,
       /what.*decision/i,
       /track.*decision/i,
-      /what.*action/i,
-      /find.*action/i,
+      /what.*act[io]+n/i,  // Handles "action" or "actin" typos
+      /find.*act[io]+n/i,
+      /show.*act[io]+n/i,
+      /get.*act[io]+n/i,
       /summarize.*conversation/i,
       /analyze.*conversation/i,
       /what.*important/i,
       /what.*need.*do/i,
+      /do i have/i,  // Handles "what action items do i have"
     ];
 
     const shouldUseAgent = agentTriggers.some(regex => regex.test(inputText.trim()));
