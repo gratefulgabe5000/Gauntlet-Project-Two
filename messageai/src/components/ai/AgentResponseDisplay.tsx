@@ -72,8 +72,9 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       
-      // Match pattern: "1. Title (Priority) - [Location](conversationId: xxx)"
-      const match = line.match(/^(\d+)\.\s*(.+?)\s*\((High|Medium|Low|Unspecified)\s+Priority\)\s*-\s*\[(.+?)\]\(conversationId:\s*(.+?)\)/i);
+      // Try multiple formats:
+      // Format 1: "1. Title (Priority) - [Location](conversationId: xxx)"
+      let match = line.match(/^(\d+)\.\s*(.+?)\s*\((High|Medium|Low|Unspecified)\s+Priority\)\s*-\s*\[(.+?)\]\(conversationId:\s*(.+?)\)/i);
       
       if (match) {
         const [, num, title, priority, location, conversationId] = match;
@@ -83,6 +84,28 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
           priority: priority as any,
           location: location.trim(),
           conversationId: conversationId.trim(),
+          fullText: line,
+        });
+        continue;
+      }
+      
+      // Format 2: "1. Title - Priority priority. Context: ..."
+      // Example: "1. Help with server issue - High priority. Context: Urgent: the server is down!"
+      match = line.match(/^(\d+)\.\s*(.+?)\s*-\s*(High|Medium|Low|Unspecified)\s+priority/i);
+      
+      if (match) {
+        const [, num, title, priority] = match;
+        
+        // Try to extract context/location info
+        const contextMatch = line.match(/Context:\s*(.+?)(?:\.|$)/i);
+        const location = 'From Conversation'; // Default
+        
+        items.push({
+          number: parseInt(num),
+          title: title.trim(),
+          priority: priority as any,
+          location: location,
+          conversationId: undefined,
           fullText: line,
         });
       }
