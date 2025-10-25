@@ -42,6 +42,7 @@ import ActionItemsList from '../../src/components/ai/ActionItemsList';
 import SearchResults from '../../src/components/ai/SearchResults';
 import { DecisionTimeline } from '../../src/components/ai/DecisionTimeline';
 import AgentProgress from '../../src/components/ai/AgentProgress';
+import AgentResponseDisplay from '../../src/components/ai/AgentResponseDisplay';
 
 interface Participant {
   uid: string;
@@ -610,6 +611,7 @@ export default function AIAssistant() {
     const isSummary = item.type === 'summary';
     const isActions = item.type === 'actions';
     const isDecisions = item.type === 'decisions'; // Phase 3.2
+    const isAgent = item.type === 'agent'; // Phase 3.4
 
     // Filter out current user from participants display
     const currentUserId = auth.currentUser?.uid;
@@ -623,12 +625,17 @@ export default function AIAssistant() {
           isSummary && styles.summaryBubble,
           isActions && styles.actionsBubble,
           isDecisions && styles.decisionsBubble, // Phase 3.2
+          isAgent && styles.agentBubble, // Phase 3.4
         ]}
       >
         {!isUser && (
           <View style={styles.messageHeader}>
             <Text style={styles.aiLabel}>
-              {isSummary ? '📊 Conversation Summary' : isActions ? '📋 Action Items' : isDecisions ? '🎯 Decisions' : '🤖 AI Assistant'}
+              {isSummary ? '📊 Conversation Summary' : 
+               isActions ? '📋 Action Items' : 
+               isDecisions ? '🎯 Decisions' : 
+               isAgent ? '🧠 AI Agent' : 
+               '🤖 AI Assistant'}
             </Text>
             {isSummary && otherParticipants.length > 0 && (
               <View style={styles.participantsContainer}>
@@ -652,6 +659,15 @@ export default function AIAssistant() {
             )}
           </View>
         )}
+        
+        {/* Display Agent Response with Enhanced UI (Phase 3.4) */}
+        {isAgent && (
+          <AgentResponseDisplay 
+            content={item.content}
+            agentData={item.agentData}
+          />
+        )}
+        
         {/* Display Action Items if present */}
         {isActions && item.actionItems && item.actionItems.length > 0 && (
           <>
@@ -700,14 +716,17 @@ export default function AIAssistant() {
           </>
         )}
         
-        <Text
-          style={[
-            styles.messageText,
-            isUser ? styles.userText : styles.aiText,
-          ]}
-        >
-          {item.content}
-        </Text>
+        {/* Display regular text for non-agent messages */}
+        {!isAgent && !isActions && !isDecisions && (
+          <Text
+            style={[
+              styles.messageText,
+              isUser ? styles.userText : styles.aiText,
+            ]}
+          >
+            {item.content}
+          </Text>
+        )}
         
         {/* Back to Conversation button for Summary */}
         {isSummary && item.conversationId && (
@@ -937,6 +956,12 @@ const styles = StyleSheet.create({
   decisionsBubble: {
     backgroundColor: '#F5F3FF',
     borderColor: '#8B5CF6',
+    borderWidth: 2,
+    maxWidth: '95%',
+  },
+  agentBubble: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#10B981',
     borderWidth: 2,
     maxWidth: '95%',
   },
