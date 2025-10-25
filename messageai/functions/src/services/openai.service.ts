@@ -14,7 +14,7 @@ let openaiClient: OpenAI | null = null;
  * Get or initialize OpenAI client
  * Singleton pattern to reuse client across function invocations
  */
-function getOpenAIClient(): OpenAI {
+export function getOpenAIClient(): OpenAI {
   if (!openaiClient) {
     const config = getOpenAIConfig();
     openaiClient = new OpenAI({

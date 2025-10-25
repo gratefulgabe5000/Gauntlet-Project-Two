@@ -181,6 +181,12 @@ export { trackDecisions } from './ai/trackDecisions';
 export { migrateMessagesToPinecone } from './ai/migrateMessagesToPinecone';
 
 /**
+ * Multi-Step Agent Tools (Phase 3.4)
+ * Conversation Intelligence Agent tools and main agent orchestrator
+ */
+export { getUserConversations, getPriorityMessages, getConversationActionItems, getConversationDecisions, summarizeConversation, searchAllConversations, conversationIntelligenceAgent } from './ai/agent';
+
+/**
  * Thread Summarization function (Phase 2.3)
  * Summarizes conversation threads using AI
  */

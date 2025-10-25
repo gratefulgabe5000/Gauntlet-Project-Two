@@ -10,26 +10,32 @@
 
 ## 📊 QUICK SUMMARY
 
-**Total Bugs:** 7 (3 Fixed ✅, 4 Deferred for Phase 4)  
+**Total Bugs:** 11 (3 Fixed ✅, 4 Deferred for Phase 4, **4 Open**)  
 **Enhancements:** 4 💡 (Future)  
 **Known Limitations:** 1 📋  
-**Blocking Issues:** 0 🟢  
-**Production Status:** ✅ MVP + 5 AI Features Complete (Phase 3.2)  
-**Demo Ready:** ✅ Ready (4 bugs + 4 enhancements deferred)  
+**Blocking Issues:** 🔴 **1 CRITICAL BLOCKER (agent.ts empty)**  
+**Production Status:** ⚠️ **Phase 3.4A Non-Functional - Agent Missing**  
+**Demo Ready:** ❌ **NOT READY** - Must fix BUG-011 first  
 
 ### Functional Bugs Breakdown
-- **Critical:** 0 bugs ✅
-- **High Priority:** 1 bug (Deferred to Phase 4)
-- **Medium Priority:** 3 bugs (deferred to Phase 4)
-- **Low Priority:** 1 bug (Deferred to Phase 4)
-- **Known Limitations:** 1 (push notifications in Expo Go)
+- **🔴 Critical:** **1 bug - BLOCKING** (agent.ts empty - BUG-011)
+- **🟠 High Priority:** 1 bug (Deferred to Phase 4)
+- **🟡 Medium Priority:** 6 bugs (2 active + 4 deferred to Phase 4)
+- **🟢 Low Priority:** 1 bug (Deferred to Phase 4)
+- **📋 Known Limitations:** 1 (push notifications in Expo Go)
+
+### Open Bugs (Must Fix)
+- **BUG-011:** 🔴 CRITICAL - agent.ts file empty (6-8 hours) **BLOCKING**
+- **BUG-009:** 🟡 Medium - Extract Actions JSON parse error (1-2 hours)
+- **BUG-010:** 🟡 Medium - Track Decisions undefined field error (30-45 min)
+- **BUG-008:** 🟡 Medium - AI features error on no results (1-2 hours)
 
 ### TypeScript Issues
 - **Test File Errors:** 0
 - **Production Code Errors:** 0
 - **Status:** None detected
 
-**Estimated Fix Time:** 9-12 hours remaining (including Phase 4 polish)
+**Estimated Fix Time:** 9-12 hours to fix all open bugs (6-8 hours for critical agent.ts)
 
 ---
 
@@ -1638,7 +1644,437 @@ const handleBack = () => {
 
 
 
+## 🐛 BUG-009: Extract Action Items Fails with JSON Parse Error (Certain Conversations)
+
+**Priority:** 🟡 Medium  
+**Category:** Error Handling / AI Integration  
+**Status:** 🔴 Open - Needs Investigation  
+**Discovered:** October 25, 2025 (Phase 3.4A Testing)  
+**Related Features:** Action Item Extraction (Phase 2.4)
+
+### Description
+When attempting to extract action items from certain conversations, the feature fails with a Firestore error indicating that the AI response could not be parsed as JSON. The error message shows: `[AI Assistant] Failed to extract actions: [FirebaseError: Failed to extract action items: Failed to parse AI response as JSON]`.
+
+This appears to be related to BUG-008 (AI features throw errors when no results found), but occurs specifically during the JSON parsing step, suggesting the OpenAI response may not be returning valid JSON in certain cases.
+
+### Steps to Reproduce
+1. Navigate to a conversation (specific conversation IDs where this occurs TBD)
+2. Tap AI button → "Extract Action Items"
+3. Observe error message in app
+
+### Expected Behavior
+- OpenAI should return valid JSON according to the specified format
+- If no action items exist, should return empty array: `{"actionItems": []}`
+- Should display user-friendly message when no items found
+
+### Actual Behavior
+- Function throws error: "Failed to parse AI response as JSON"
+- User sees error message in app
+- No graceful fallback
+
+### Impact
+- **Severity:** Medium (affects functionality but not all conversations)
+- **User Impact:** Moderate - feature fails on certain conversations
+- **Frequency:** Intermittent - depends on conversation content
+- **Workaround:** Try different conversation
+
+### Technical Notes
+
+**Likely Causes:**
+1. OpenAI returns text instead of JSON (ignoring `response_format: { type: 'json_object' }`)
+2. OpenAI returns JSON with wrong structure (missing "actionItems" key)
+3. OpenAI returns markdown-wrapped JSON (```json ... ```)
+4. Empty/null response from OpenAI
+
+**Code Location:**
+- `messageai/functions/src/ai/extractActions.ts` - Cloud Function
+- `messageai/functions/src/services/openai.service.ts` - `extractActionItems()` function (lines 438-596)
+
+**Current Error Handling:**
+```typescript
+try {
+  parsedResponse = JSON.parse(content);
+} catch (parseError) {
+  functions.logger.error('Failed to parse action items JSON', {
+    content,
+    parseError: parseError instanceof Error ? parseError.message : 'Unknown error',
+  });
+  throw new Error('Failed to parse AI response as JSON');
+}
+```
+
+**Recommended Fix:**
+1. Add more robust JSON parsing:
+   - Strip markdown code blocks if present
+   - Handle partial JSON responses
+   - Validate response structure before parsing
+2. Add fallback to return empty array on parse failure
+3. Log full OpenAI response for debugging
+4. Add retry logic with different prompt if parsing fails
+
+### Estimated Fix Time
+**1-2 hours**
+- Add robust JSON parsing (30 min)
+- Add validation and fallbacks (30 min)
+- Testing with problematic conversations (30 min)
+
+### Resolution Plan
+- Investigate specific conversations where failure occurs
+- Add enhanced logging to capture OpenAI raw responses
+- Implement fallback parsing strategies
+- May be fixed together with BUG-008 (empty results handling)
+
+---
+
+## 🐛 BUG-010: Track Decisions Fails with Undefined Field Error (Certain Conversations)
+
+**Priority:** 🟡 Medium  
+**Category:** Error Handling / Firestore Integration  
+**Status:** 🔴 Open - Needs Investigation  
+**Discovered:** October 25, 2025 (Phase 3.4A Testing)  
+**Related Features:** Decision Tracking (Phase 3.2)
+
+### Description
+When attempting to track decisions from certain conversations, the feature fails with a Firestore error indicating that an undefined value was provided for the `reasoning` field. The error message shows: `[AI Assistant] Failed to track decisions: [FirebaseError: Failed to track decisions: Value for argument 'data' is not a valid Firestore document. Cannot use 'undefined' as a Firestore value (found in field 'reasoning'). If you want to ignore undefined values, enable 'ignoreUndefinedProperties'.]`
+
+This error occurs because the OpenAI response includes `undefined` or `null` for optional fields, which Firestore rejects when trying to save the decision document.
+
+### Steps to Reproduce
+1. Navigate to a conversation (specific conversation IDs where this occurs TBD)
+2. Tap AI button → "Track Decisions"
+3. Observe error message in app
+
+### Expected Behavior
+- Optional fields (like `reasoning`, `implications`) should be omitted from Firestore document if undefined
+- Firestore should accept the decision document without errors
+- Should display user-friendly message when no decisions found
+
+### Actual Behavior
+- Function throws Firestore error about undefined field
+- User sees error message in app
+- Decision is not saved to database
+
+### Impact
+- **Severity:** Medium (affects functionality but not all conversations)
+- **User Impact:** Moderate - feature fails on certain conversations
+- **Frequency:** Intermittent - depends on conversation content and AI response
+- **Workaround:** Try different conversation or manually add decisions
+
+### Technical Notes
+
+**Root Cause:**
+The validation logic in `trackConversationDecisions()` sets optional fields to `undefined` instead of omitting them:
+
+```typescript
+reasoning: item.reasoning ? String(item.reasoning) : undefined,
+implications: item.implications ? String(item.implications) : undefined,
+```
+
+Firestore does NOT accept `undefined` as a value - fields must either have a value or be omitted entirely.
+
+**Code Location:**
+- `messageai/functions/src/services/openai.service.ts` - `trackConversationDecisions()` function (lines 598-766)
+- Specifically lines 733, 735, 740, 743, 751, 753
+
+**Current Problematic Code:**
+```typescript
+.map((item: any) => ({
+  conversationId,
+  decision: String(item.decision),
+  decisionMaker: String(item.decisionMaker),
+  decisionMakerId: item.decisionMakerId || null,
+  decidedAt: String(item.decidedAt),
+  context: String(item.context),
+  reasoning: item.reasoning ? String(item.reasoning) : undefined, // ❌ PROBLEM
+  implications: item.implications ? String(item.implications) : undefined, // ❌ PROBLEM
+  sourceMessageIds: Array.isArray(item.sourceMessageIds) 
+    ? item.sourceMessageIds 
+    : [],
+  messageSnippets: Array.isArray(item.messageSnippets) 
+    ? item.messageSnippets 
+    : undefined, // ❌ PROBLEM
+  category: ['strategic', 'tactical', 'operational', 'personal'].includes(item.category)
+    ? item.category
+    : undefined, // ❌ PROBLEM
+  impactLevel: ['high', 'medium', 'low'].includes(item.impactLevel)
+    ? item.impactLevel
+    : undefined, // ❌ PROBLEM
+  confidence: typeof item.confidence === 'number' 
+    ? Math.max(0, Math.min(1, item.confidence))
+    : 0.7,
+  participants: Array.isArray(item.participants) 
+    ? item.participants 
+    : undefined, // ❌ PROBLEM
+}));
+```
+
+**Recommended Fix:**
+Replace all `undefined` with omitted fields:
+
+```typescript
+.map((item: any) => {
+  const decision: any = {
+    conversationId,
+    decision: String(item.decision),
+    decisionMaker: String(item.decisionMaker),
+    decisionMakerId: item.decisionMakerId || null,
+    decidedAt: String(item.decidedAt),
+    context: String(item.context),
+    sourceMessageIds: Array.isArray(item.sourceMessageIds) 
+      ? item.sourceMessageIds 
+      : [],
+    confidence: typeof item.confidence === 'number' 
+      ? Math.max(0, Math.min(1, item.confidence))
+      : 0.7,
+  };
+
+  // Only add optional fields if they have values
+  if (item.reasoning) decision.reasoning = String(item.reasoning);
+  if (item.implications) decision.implications = String(item.implications);
+  if (item.messageSnippets && Array.isArray(item.messageSnippets)) {
+    decision.messageSnippets = item.messageSnippets;
+  }
+  if (['strategic', 'tactical', 'operational', 'personal'].includes(item.category)) {
+    decision.category = item.category;
+  }
+  if (['high', 'medium', 'low'].includes(item.impactLevel)) {
+    decision.impactLevel = item.impactLevel;
+  }
+  if (item.participants && Array.isArray(item.participants)) {
+    decision.participants = item.participants;
+  }
+
+  return decision;
+})
+```
+
+**Alternative Fix (Less Clean):**
+Enable `ignoreUndefinedProperties` in Firestore settings, but this is not recommended as it masks the underlying issue.
+
+### Estimated Fix Time
+**30-45 minutes**
+- Update mapping logic to omit undefined fields (20 min)
+- Test with various conversations (15 min)
+- Verify Firestore saves correctly (10 min)
+
+### Resolution Plan
+- Update `trackConversationDecisions()` to omit undefined fields instead of setting them to `undefined`
+- Apply same fix pattern to `extractActionItems()` if needed (check for consistency)
+- Test with conversations that previously failed
+- Mark as fixed once verified
+
+---
+
+## 🔴 BUG-011: CRITICAL - agent.ts File is Empty (No Agent Tool Implementations)
+
+**Priority:** 🔴 CRITICAL - BLOCKING  
+**Category:** Implementation / Missing Code  
+**Status:** 🔴 Open - Requires Implementation  
+**Discovered:** October 25, 2025 (Phase 3.4A Testing)  
+**Related Features:** Conversation Intelligence Agent (Phase 3.4)
+
+### Description
+**CRITICAL ISSUE:** The `messageai/functions/src/ai/agent.ts` file exists in the codebase but is **completely empty** with **0 bytes of content**. This file is supposed to contain all the agent tool implementations including:
+- `getUserConversations`
+- `getPriorityMessages` ⚠️
+- `getConversationActionItems`
+- `getConversationDecisions`
+- `summarizeConversation`
+- `searchAllConversations`
+- `conversationIntelligenceAgent` (main orchestrator)
+
+These functions are **exported from `functions/src/index.ts`** (line 187) but **do not exist** in the agent.ts file, causing **all agent functionality to fail completely**.
+
+### Impact
+**🔴 BLOCKING - Phase 3.4A Cannot Function**
+- **Severity:** CRITICAL - Complete feature failure
+- **User Impact:** TOTAL - Agent is non-functional
+- **Frequency:** 100% - Every agent query fails
+- **Workaround:** NONE - Feature is completely broken
+
+### Steps to Reproduce
+1. Open AI Assistant tab
+2. Type "What are my priorities?"
+3. Observe: Agent progress UI appears but then shows error
+4. Error: "Technical issue preventing me from retrieving your priority messages"
+5. Root cause: `getPriorityMessages` function doesn't exist (agent.ts is empty)
+
+### Expected Behavior
+- `agent.ts` should contain ~500-800 lines of code implementing all 7 functions
+- Agent should be able to call tools and synthesize results
+- Phase 3.4A test cases should pass
+
+### Actual Behavior
+- `agent.ts` is empty (0 bytes, 0 lines)
+- All agent functions are undefined
+- All agent queries fail
+- Test Case 1 (Simple Priority Query) fails immediately
+
+### Technical Details
+
+**File Status:**
+- Location: `messageai/functions/src/ai/agent.ts`
+- Size: 0 bytes (EMPTY)
+- Git Status: Untracked file (newly created but never committed)
+- Created: Recently (Phase 3.4 work)
+- Content: None
+
+**Referenced In:**
+- `messageai/functions/src/index.ts` (line 187) - Exports 7 functions from agent.ts
+- `messageai/src/services/firebase/functions.ts` - Calls `runConversationIntelligenceAgent`
+- `messageai/src/components/ai/AgentProgress.tsx` - UI expects tool names like `getPriorityMessages`
+- `Artifacts/1. Notes/1. Planning Docs/TEST-Phase-3.4A.md` - Test plan assumes agent exists
+
+**What's Missing:**
+The entire agent implementation including:
+
+1. **Tool Implementations (Cloud Functions):**
+   ```typescript
+   export const getUserConversations = functions.https.onCall(...)
+   export const getPriorityMessages = functions.https.onCall(...)
+   export const getConversationActionItems = functions.https.onCall(...)
+   export const getConversationDecisions = functions.https.onCall(...)
+   export const summarizeConversation = functions.https.onCall(...)
+   export const searchAllConversations = functions.https.onCall(...)
+   ```
+
+2. **Main Agent Orchestrator:**
+   ```typescript
+   export const conversationIntelligenceAgent = functions.https.onCall(...)
+   ```
+
+3. **Tool Definitions & Schemas:**
+   - Function parameter types
+   - OpenAI tool schemas
+   - Tool calling logic
+
+4. **Agent Loop:**
+   - Multi-step reasoning
+   - Tool selection
+   - Result synthesis
+   - Max iteration limits
+
+### Resolution Required
+
+**Estimated Implementation Time: 6-8 hours**
+
+This is a **complete implementation** of Phase 3.4, broken down as:
+
+1. **Tool Functions (4 hours):**
+   - `getUserConversations` (30 min)
+   - `getPriorityMessages` (1 hour)
+   - `getConversationActionItems` (30 min)
+   - `getConversationDecisions` (30 min)
+   - `summarizeConversation` (30 min)
+   - `searchAllConversations` (30 min)
+
+2. **Main Agent Orchestrator (3 hours):**
+   - OpenAI function calling setup
+   - Tool schema definitions
+   - Agent reasoning loop
+   - Result synthesis
+   - Error handling
+
+3. **Testing & Debugging (1 hour):**
+   - Verify all tools work independently
+   - Test agent orchestration
+   - Fix any integration issues
+
+**Options:**
+
+**Option A: Implement from Scratch (6-8 hours)**
+- Build complete agent.ts file based on requirements
+- Follow Phase 3.4 specifications
+- Implement all 7 functions
+- Test thoroughly
+
+**Option B: Check Version Control (10 minutes)**
+- Search git history for previous agent.ts implementation
+- Check if code exists in another branch
+- Restore from backup if available
+- RECOMMENDED: Try this first before reimplementing
+
+**Option C: Use Prior Chat Implementation (30 minutes)**
+- Review `Prior Chats/2025.10.24 - 001...` for any agent.ts code snippets
+- Check if AI assistant had generated this code in previous session
+- Copy/restore if found
+
+### Priority Justification
+Marked as **CRITICAL** because:
+1. **Complete feature failure** - Phase 3.4A cannot function at all
+2. **Blocks all testing** - All 8 test cases will fail
+3. **High effort to fix** - 6-8 hours of implementation work
+4. **Production readiness** - Agent is a key MVP feature
+5. **User-facing impact** - Users cannot use conversation intelligence features
+
+### Next Steps
+
+**IMMEDIATE ACTION REQUIRED:**
+
+1. **Check version control first:**
+   ```bash
+   git log --all --full-history -- "messageai/functions/src/ai/agent.ts"
+   git show <commit>:messageai/functions/src/ai/agent.ts
+   ```
+
+2. **If not in git, check prior chat logs:**
+   - Search `Prior Chats/2025.10.24 - 001 - cursor_review_progress_and_next_steps.md`
+   - Look for any agent.ts code implementations
+
+3. **If not found anywhere:**
+   - Must implement from scratch
+   - Follow TEST-Phase-3.4A.md requirements
+   - Use existing tool functions as reference (extractActions.ts, trackDecisions.ts, etc.)
+   - Implement agent orchestration with OpenAI function calling
+
+4. **Deploy and test:**
+   ```bash
+   npm run deploy:functions
+   ```
+
+5. **Verify functions exist:**
+   - Check Firebase Console → Functions
+   - Verify all 7 functions are deployed
+   - Run Test Case 1 to validate
+
+---
+
 ## 📅 CHANGELOG
+
+### October 25, 2025 - Phase 3.4A Testing
+- **CRITICAL BUG DISCOVERED - BUG-011**
+  - agent.ts file is completely empty (0 bytes)
+  - All agent tool implementations missing
+  - Phase 3.4A is non-functional
+  - Blocks all conversation intelligence features
+  - Requires 6-8 hours to implement from scratch OR restore from backup
+  - **HIGHEST PRIORITY FIX**
+
+- **Testing Issues Found - BUG-009, BUG-010**
+  - BUG-009: Extract Action Items fails with JSON parse error (Medium priority)
+  - BUG-010: Track Decisions fails with undefined field error (Medium priority)
+  - Both issues affect certain conversations intermittently
+  - Related to error handling and data validation
+  - Estimated 1.5-2 hours to fix both
+  - NOT blocking but should be fixed alongside agent.ts
+
+- **Testing Progress:**
+  - Phase 3.4A Test Case 1 (Simple Priority Query): **FAIL** ❌
+  - Setup steps completed successfully ✅
+  - Agent UI appears correctly ✅
+  - Agent functionality fails due to empty agent.ts ❌
+  - Additional AI features tested:
+    - Summary: Works on some conversations ✅
+    - Extract Action Items: Fails on some conversations (BUG-009) ❌
+    - Track Decisions: Fails on some conversations (BUG-010) ❌
+    - Semantic Search: Works correctly ✅
+
+- **Current Status:**
+  - Total bugs: 11 (3 fixed, 4 deferred, **4 open and critical**)
+  - **1 CRITICAL blocking bug:** agent.ts empty
+  - 2 Medium bugs: Action Items and Decisions errors
+  - 1 Medium bug: BUG-008 (AI features throw errors when no results)
+  - Must fix BUG-011 before Phase 3.4A can proceed
 
 ### October 24, 2025
 - **User Feedback & Feature Requests**

@@ -31,6 +31,9 @@ import {
   TrackDecisionsResponse,
   migrateMessagesToPinecone,
   MigrateToPineconeResponse,
+  runConversationIntelligenceAgent,
+  ConversationIntelligenceResponse,
+  ToolCall,
 } from '../../src/services/firebase/functions';
 import { getConversation, getUser } from '../../src/services/firebase/firestore';
 import { auth } from '../../src/services/firebase/config';
@@ -38,6 +41,7 @@ import Avatar from '../../src/components/shared/Avatar';
 import ActionItemsList from '../../src/components/ai/ActionItemsList';
 import SearchResults from '../../src/components/ai/SearchResults';
 import { DecisionTimeline } from '../../src/components/ai/DecisionTimeline';
+import AgentProgress from '../../src/components/ai/AgentProgress';
 
 interface Participant {
   uid: string;
@@ -50,13 +54,14 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  type?: 'summary' | 'chat' | 'actions' | 'decisions'; // Phase 3.2: Added 'decisions' type
+  type?: 'summary' | 'chat' | 'actions' | 'decisions' | 'agent'; // Phase 3.4: Added 'agent' type
   conversationId?: string;
   participants?: Participant[];
   actionItems?: ActionItem[];
   decisions?: Decision[]; // Phase 3.2: Decision tracking data
   messageCount?: number; // For tracking stats
   encryptedCount?: number; // For tracking stats
+  agentData?: ConversationIntelligenceResponse; // Phase 3.4: Agent response data
 }
 
 const AI_MESSAGES_KEY = '@ai_messages';
@@ -81,6 +86,16 @@ export default function AIAssistant() {
   const [searchResults, setSearchResults] = useState<SearchResponse | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
+
+  // Agent state (Phase 3.4)
+  const [isAgentThinking, setIsAgentThinking] = useState(false);
+  const [agentProgress, setAgentProgress] = useState<{
+    currentIteration: number;
+    maxIterations: number;
+    toolCalls: ToolCall[];
+    status: 'starting' | 'thinking' | 'calling_tool' | 'synthesizing' | 'complete';
+    currentTool?: string;
+  } | null>(null);
 
   // Load messages from AsyncStorage on mount
   useEffect(() => {
@@ -310,6 +325,32 @@ export default function AIAssistant() {
   const handleSend = async () => {
     if (!inputText.trim() || isLoading) return;
 
+    // Phase 3.4: Check if query should use the agent
+    // Agent triggers: questions about priorities, decisions, action items, or complex multi-step queries
+    const agentTriggers = [
+      /what are.*priorit/i,
+      /find.*priorit/i,
+      /show.*priorit/i,
+      /what.*decision/i,
+      /track.*decision/i,
+      /what.*action/i,
+      /find.*action/i,
+      /summarize.*conversation/i,
+      /analyze.*conversation/i,
+      /what.*important/i,
+      /what.*need.*do/i,
+    ];
+
+    const shouldUseAgent = agentTriggers.some(regex => regex.test(inputText.trim()));
+
+    if (shouldUseAgent) {
+      // Route to agent
+      await handleAgentQuery(inputText.trim());
+      setInputText('');
+      return;
+    }
+
+    // Regular AI chat
     const userMessage: ChatMessage = {
       id: `user_${Date.now()}`,
       role: 'user',
@@ -417,6 +458,91 @@ export default function AIAssistant() {
     setShowSearchResults(false);
     setSearchQuery('');
     setSearchResults(null);
+  };
+
+  // Handle Agent Query (Phase 3.4)
+  const handleAgentQuery = async (query: string) => {
+    if (!query.trim() || isAgentThinking) return;
+
+    // Add user message
+    const userMessage: ChatMessage = {
+      id: `user_agent_${Date.now()}`,
+      role: 'user',
+      content: query.trim(),
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setIsAgentThinking(true);
+    setAgentProgress({
+      currentIteration: 0,
+      maxIterations: 5,
+      toolCalls: [],
+      status: 'starting',
+    });
+
+    try {
+      console.log('[AI Assistant] Running agent with query:', query);
+
+      // Call the agent
+      const response = await runConversationIntelligenceAgent({
+        query: query.trim(),
+        maxIterations: 5,
+      });
+
+      console.log('[AI Assistant] Agent response:', {
+        iterations: response.iterations,
+        toolCallsCount: response.toolCalls.length,
+        answerLength: response.answer.length,
+      });
+
+      // Update progress to complete
+      setAgentProgress({
+        currentIteration: response.iterations,
+        maxIterations: 5,
+        toolCalls: response.toolCalls,
+        status: 'complete',
+      });
+
+      // Add agent response
+      const agentMessage: ChatMessage = {
+        id: `agent_${Date.now()}`,
+        role: 'assistant',
+        content: response.answer,
+        timestamp: new Date(),
+        type: 'agent',
+        agentData: response,
+      };
+
+      setMessages((prev) => [...prev, agentMessage]);
+
+      // Clear progress after a delay
+      setTimeout(() => {
+        setAgentProgress(null);
+      }, 2000);
+    } catch (error) {
+      console.error('[AI Assistant] Agent query failed:', error);
+
+      // Clear progress
+      setAgentProgress(null);
+
+      // Show error message
+      const errorMessage: ChatMessage = {
+        id: `error_${Date.now()}`,
+        role: 'assistant',
+        content: "I'm sorry, I encountered an error while analyzing your request. Please try again.",
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
+
+      Alert.alert(
+        'Agent Error',
+        'Could not complete the analysis. Please check your internet connection and try again.'
+      );
+    } finally {
+      setIsAgentThinking(false);
+    }
   };
 
   /**
@@ -708,6 +834,20 @@ export default function AIAssistant() {
         </View>
       )}
 
+      {/* Agent Progress (Phase 3.4) */}
+      {!showSearchResults && agentProgress && (
+        <View style={styles.agentProgressContainer}>
+          <AgentProgress
+            isThinking={isAgentThinking}
+            currentIteration={agentProgress.currentIteration}
+            maxIterations={agentProgress.maxIterations}
+            toolCalls={agentProgress.toolCalls}
+            status={agentProgress.status}
+            currentTool={agentProgress.currentTool}
+          />
+        </View>
+      )}
+
       {/* Input Area (only show in chat mode) */}
       {!showSearchResults && (
         <View style={styles.inputContainer}>
@@ -869,6 +1009,11 @@ const styles = StyleSheet.create({
     color: '#999',
   },
   typingContainer: {
+    padding: 16,
+    paddingBottom: 8,
+    backgroundColor: '#F5F5F5',
+  },
+  agentProgressContainer: {
     padding: 16,
     paddingBottom: 8,
     backgroundColor: '#F5F5F5',

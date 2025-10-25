@@ -223,4 +223,35 @@ export async function migrateMessagesToPinecone(
   return data;
 }
 
+/**
+ * Conversation Intelligence Agent
+ * Phase 3.4: Multi-Step Agent
+ */
+export interface ConversationIntelligenceRequest {
+  query: string;
+  maxIterations?: number; // Default: 5
+}
+
+export interface ToolCall {
+  tool: string;
+  args: any;
+  result: any;
+  iteration: number;
+}
+
+export interface ConversationIntelligenceResponse {
+  answer: string;
+  toolCalls: ToolCall[];
+  iterations: number;
+  timestamp: string;
+}
+
+export async function runConversationIntelligenceAgent(
+  request: ConversationIntelligenceRequest
+): Promise<ConversationIntelligenceResponse> {
+  const agentCallable = httpsCallable(functions, 'conversationIntelligenceAgent');
+  const result = await agentCallable(request);
+  const data = result.data as ConversationIntelligenceResponse;
+  return data;
+}
 
