@@ -304,12 +304,19 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
     }
 
     if (targetConversationIds.length === 0) {
+      functions.logger.info('No conversations found for user', { uid: userId });
       return {
         actionItems: [],
         totalFound: 0,
         timestamp: new Date().toISOString(),
       };
     }
+
+    functions.logger.info('Processing conversations for action items', {
+      uid: userId,
+      conversationCount: targetConversationIds.length,
+      conversationIds: targetConversationIds.slice(0, 5),
+    });
 
     // Step 2: Call extractActions for each conversation and aggregate
     const { extractActionItems } = await import('../services/openai.service');
@@ -338,8 +345,19 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
             };
           });
 
+          functions.logger.info('Extracting action items from conversation', {
+            conversationId,
+            messageCount: messages.length,
+            conversationName: conversationMap.get(conversationId),
+          });
+
           // Extract action items using AI
           const rawActions = await extractActionItems(messages);
+
+          functions.logger.info('Action items extracted', {
+            conversationId,
+            actionCount: rawActions.length,
+          });
 
           // Add conversation context
           rawActions.forEach((action) => {
@@ -355,11 +373,16 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
               confidence: action.confidence || 0.8,
             });
           });
+        } else {
+          functions.logger.info('No messages found in conversation', {
+            conversationId,
+          });
         }
       } catch (err) {
-        functions.logger.warn('Failed to extract actions from conversation', {
+        functions.logger.error('Failed to extract actions from conversation', {
           conversationId,
           error: err instanceof Error ? err.message : 'Unknown',
+          stack: err instanceof Error ? err.stack : undefined,
         });
         // Continue with other conversations
       }
