@@ -244,6 +244,13 @@ export const getPriorityMessages = functions.https.onCall(async (data, context) 
  * Get action items from specific conversations or all conversations
  */
 export const getConversationActionItems = functions.https.onCall(async (data, context) => {
+  // CRITICAL: Log function entry immediately
+  functions.logger.info('🔵 getConversationActionItems CALLED', {
+    timestamp: new Date().toISOString(),
+    hasAuth: !!context.auth,
+    data,
+  });
+
   // Authentication check
   if (!context.auth) {
     throw new functions.https.HttpsError(
@@ -257,9 +264,10 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
     const conversationIds = data.conversationIds || [];
     const limit = data.limit || 20;
 
-    functions.logger.info('Getting conversation action items', {
+    functions.logger.info('🟢 Getting conversation action items - START', {
       uid: userId,
       conversationIds: conversationIds.length,
+      requestedConversationIds: conversationIds,
       limit,
     });
 
@@ -322,8 +330,16 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
     const { extractActionItems } = await import('../services/openai.service');
     const allActionItems: any[] = [];
 
-    // Process up to 5 conversations (to keep execution time reasonable)
-    for (const conversationId of targetConversationIds.slice(0, 5)) {
+    // Process up to 10 conversations (increased to find more action items)
+    const conversationsToProcess = targetConversationIds.slice(0, 10);
+    
+    functions.logger.info('🟡 Starting extraction from conversations', {
+      totalConversations: targetConversationIds.length,
+      willProcess: conversationsToProcess.length,
+      conversationIds: conversationsToProcess,
+    });
+
+    for (const conversationId of conversationsToProcess) {
       try {
         // Fetch messages
         const messagesSnapshot = await admin
@@ -406,10 +422,11 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
       })
       .slice(0, limit);
 
-    functions.logger.info('Action items retrieved', {
+    functions.logger.info('🟢 Action items retrieved - FINAL RESULT', {
       uid: userId,
       count: sortedItems.length,
       totalFound: allActionItems.length,
+      conversationsProcessed: targetConversationIds.length,
     });
 
     return {
@@ -418,9 +435,11 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
       timestamp: new Date().toISOString(),
     };
   } catch (error) {
-    functions.logger.error('Failed to get action items', {
-      uid: context.auth.uid,
+    functions.logger.error('🔴 FAILED to get action items', {
+      uid: context.auth?.uid,
       error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      errorType: error?.constructor?.name,
     });
 
     if (error instanceof functions.https.HttpsError) {
