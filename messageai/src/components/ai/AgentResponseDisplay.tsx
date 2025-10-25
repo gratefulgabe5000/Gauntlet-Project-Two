@@ -10,7 +10,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 
 interface AgentResponseDisplayProps {
@@ -214,7 +214,7 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
 
           {/* Action Items List */}
           {expandedSections.has('items') && (
-            <ScrollView style={styles.itemsList} nestedScrollEnabled>
+            <View style={styles.itemsList}>
               {actionItems.map((item) => (
                 <TouchableOpacity
                   key={item.number}
@@ -246,7 +246,7 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
                   </View>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </View>
           )}
 
           {/* Note */}
@@ -290,7 +290,7 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
 
           {/* Priority Messages List */}
           {expandedSections.has('priorities') && (
-            <ScrollView style={styles.itemsList} nestedScrollEnabled>
+            <View style={styles.itemsList}>
               {priorityMessages.map((item) => (
                 <TouchableOpacity
                   key={item.number}
@@ -322,7 +322,7 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
                   </View>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </View>
           )}
 
           {/* Note */}
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   itemsList: {
-    maxHeight: 500,
+    // Removed maxHeight - let parent FlatList handle scrolling
   },
   itemCard: {
     backgroundColor: '#FFFFFF',
