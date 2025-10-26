@@ -731,34 +731,47 @@ Return ONLY valid JSON, no markdown formatting.`,
                item.decidedAt && 
                item.context;
       })
-      .map((item: any) => ({
-        conversationId,
-        decision: String(item.decision),
-        decisionMaker: String(item.decisionMaker),
-        decisionMakerId: item.decisionMakerId || null,
-        decidedAt: String(item.decidedAt),
-        context: String(item.context),
-        reasoning: item.reasoning ? String(item.reasoning) : undefined,
-        implications: item.implications ? String(item.implications) : undefined,
-        sourceMessageIds: Array.isArray(item.sourceMessageIds) 
-          ? item.sourceMessageIds 
-          : [],
-        messageSnippets: Array.isArray(item.messageSnippets) 
-          ? item.messageSnippets 
-          : undefined,
-        category: ['strategic', 'tactical', 'operational', 'personal'].includes(item.category)
-          ? item.category
-          : undefined,
-        impactLevel: ['high', 'medium', 'low'].includes(item.impactLevel)
-          ? item.impactLevel
-          : undefined,
-        confidence: typeof item.confidence === 'number' 
-          ? Math.max(0, Math.min(1, item.confidence))
-          : 0.7,
-        participants: Array.isArray(item.participants) 
-          ? item.participants 
-          : undefined,
-      }));
+      .map((item: any) => {
+        // Build decision object, omitting undefined fields
+        const decision: any = {
+          conversationId,
+          decision: String(item.decision),
+          decisionMaker: String(item.decisionMaker),
+          decidedAt: String(item.decidedAt),
+          context: String(item.context),
+          sourceMessageIds: Array.isArray(item.sourceMessageIds) 
+            ? item.sourceMessageIds 
+            : [],
+          confidence: typeof item.confidence === 'number' 
+            ? Math.max(0, Math.min(1, item.confidence))
+            : 0.7,
+        };
+
+        // Add optional fields only if they exist
+        if (item.decisionMakerId) {
+          decision.decisionMakerId = item.decisionMakerId;
+        }
+        if (item.reasoning) {
+          decision.reasoning = String(item.reasoning);
+        }
+        if (item.implications) {
+          decision.implications = String(item.implications);
+        }
+        if (Array.isArray(item.messageSnippets) && item.messageSnippets.length > 0) {
+          decision.messageSnippets = item.messageSnippets;
+        }
+        if (['strategic', 'tactical', 'operational', 'personal'].includes(item.category)) {
+          decision.category = item.category;
+        }
+        if (['high', 'medium', 'low'].includes(item.impactLevel)) {
+          decision.impactLevel = item.impactLevel;
+        }
+        if (Array.isArray(item.participants) && item.participants.length > 0) {
+          decision.participants = item.participants;
+        }
+
+        return decision;
+      });
 
     functions.logger.info('Decisions tracked', {
       messageCount: messages.length,
