@@ -1068,7 +1068,7 @@ Guidelines:
 - If no results are found, say so clearly
 - Don't call the same tool twice with the same parameters
 
-CRITICAL FORMATTING RULES (for action items and priority messages):
+CRITICAL FORMATTING RULES (for action items, priority messages, and decisions):
 - Format results as a numbered list: "1. Task description"
 - After each item, include the conversation source in brackets: [ConversationName]
 - Immediately after the brackets, include the conversationId in parentheses: (conversationId)
@@ -1084,8 +1084,13 @@ CRITICAL FORMATTING RULES (for action items and priority messages):
     - If a specific date is mentioned, use that date
     - If no deadline mentioned, use "unspecified"
   * Original context message in quotes ONLY if very helpful and brief
+- For decisions, also include:
+  * Decision maker in format: "Decided by: Name" or just the name if clear
+  * Date in format: "Date: YYYY-MM-DD" (use message timestamp)
+  * Reasoning in format: "Reasoning: brief explanation" (if available from context)
 - Example for action items: "1. Review quarterly report (High Priority) [Team Meeting] (abc123) - Assigned to: Sarah, Deadline: 2025-11-01"
 - Example for priorities: "1. Server is down! (Urgent Priority) [Direct Chat] (xyz789)"
+- Example for decisions: "1. Approved budget increase to $50k [Team Meeting] (abc123) - Decided by: John, Date: 2025-10-20, Reasoning: Cost overruns"
 - IMPORTANT: Sort action items by deadline date (earliest first), then by priority within each date
 - After gathering information from tools, provide a synthesized answer
 

@@ -46,6 +46,17 @@ interface ParsedPriorityMessage {
   fullText: string;
 }
 
+interface ParsedDecision {
+  number: number;
+  title: string;
+  location: string;
+  conversationId?: string;
+  decidedBy?: string;
+  date?: string;
+  reasoning?: string;
+  fullText: string;
+}
+
 export default function AgentResponseDisplay({ content, agentData }: AgentResponseDisplayProps) {
   const router = useRouter();
   
@@ -54,13 +65,14 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
   
   // Start with sections expanded by default for THIS instance
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set([`main-${instanceId}`, `items-${instanceId}`, `priorities-${instanceId}`])
+    new Set([`main-${instanceId}`, `items-${instanceId}`, `priorities-${instanceId}`, `decisions-${instanceId}`])
   );
 
-  // Check if response is action items or priorities - ULTRA flexible detection
+  // Check if response is action items, priorities, or decisions - ULTRA flexible detection
   // Accept if content mentions these concepts at all, even in "no results" messages
   const isActionItems = /action\s*items?/i.test(content) || /\bactions?\b/i.test(content) || /to\s*do/i.test(content);
   const isPriorities = /priorit/i.test(content) || /important/i.test(content) || /urgent/i.test(content) || /high\s*priority/i.test(content);
+  const isDecisions = /decision/i.test(content) || /decided/i.test(content) || /approved/i.test(content) || /concluded/i.test(content);
 
   const toggleSection = (section: string) => {
     const sectionKey = `${section}-${instanceId}`;
@@ -320,6 +332,126 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
     return items;
   };
 
+  // Parse decisions from content - VERY flexible parser (same pattern as action items/priorities)
+  const parseDecisions = (): ParsedDecision[] => {
+    const items: ParsedDecision[] = [];
+    const lines = content.split('\n');
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // Skip empty lines and headers
+      if (!line || line.toLowerCase().includes('here are') || line.toLowerCase().includes('decisions:') || line.toLowerCase().includes('found the following')) {
+        continue;
+      }
+      
+      // Most flexible pattern: Just look for "number. text"
+      const basicMatch = line.match(/^(\d+)\.\s+(.+)$/);
+      
+      if (basicMatch) {
+        const [, num, restOfLine] = basicMatch;
+        let title = restOfLine;
+        let location = 'From Conversation';
+        let conversationId: string | undefined;
+        let decidedBy: string | undefined;
+        let date: string | undefined;
+        let reasoning: string | undefined;
+        
+        // FIRST: Extract conversationId from (id) pattern BEFORE any cleaning
+        const idMatch = restOfLine.match(/\]\s*\(([^)]+)\)/);  // After brackets
+        if (idMatch) {
+          conversationId = idMatch[1];
+        } else {
+          // Fallback: try to find any (id-looking) pattern with hyphens or long alphanumeric
+          const fallbackIdMatch = restOfLine.match(/\(([a-zA-Z0-9]{15,})\)/);
+          if (fallbackIdMatch) {
+            conversationId = fallbackIdMatch[1];
+          }
+        }
+        
+        // SECOND: Extract location from brackets: [Team Meeting]
+        const locationMatch = restOfLine.match(/\[([^\]]+)\]/);
+        if (locationMatch) {
+          location = locationMatch[1];
+        }
+        
+        // Extract decided by from patterns like "Decided by: Name" or "- Name"
+        const decidedByMatch1 = restOfLine.match(/Decided by:\s*([^,\-]+)/i);
+        const decidedByMatch2 = restOfLine.match(/[-–]\s*([^,\-]+?)(?=\s*[-–,]|$)/);
+        if (decidedByMatch1) {
+          decidedBy = decidedByMatch1[1].trim();
+        } else if (decidedByMatch2 && !decidedByMatch2[1].match(/date|reasoning|by \d/i)) {
+          decidedBy = decidedByMatch2[1].trim();
+        }
+        
+        // Extract date from patterns like "Date: 2025-10-20" or "on 2025-10-20"
+        const dateMatch1 = restOfLine.match(/Date:\s*(\d{4}-\d{2}-\d{2})/i);
+        const dateMatch2 = restOfLine.match(/on\s+(\d{4}-\d{2}-\d{2})/i);
+        if (dateMatch1) {
+          date = dateMatch1[1];
+        } else if (dateMatch2) {
+          date = dateMatch2[1];
+        }
+        
+        // Extract reasoning from patterns like "Reasoning: text" or "because text"
+        const reasoningMatch1 = restOfLine.match(/Reasoning:\s*([^,\-]+)/i);
+        const reasoningMatch2 = restOfLine.match(/because\s+([^,\-]+)/i);
+        if (reasoningMatch1) {
+          reasoning = reasoningMatch1[1].trim();
+        } else if (reasoningMatch2) {
+          reasoning = reasoningMatch2[1].trim();
+        }
+        
+        // THIRD: Clean up title - remove ALL metadata
+        title = restOfLine;
+        // Remove location brackets
+        title = title.replace(/\[[^\]]+\]/g, '').trim();
+        // Remove conversationId parentheses
+        title = title.replace(/\([a-zA-Z0-9]{15,}\)/g, '').trim();
+        // Remove decided by
+        title = title.replace(/[-–]\s*Decided by:[^,\-]+(,|\s|$)/gi, '').trim();
+        // Remove date
+        title = title.replace(/[-–]?\s*Date:\s*\d{4}-\d{2}-\d{2}/gi, '').trim();
+        title = title.replace(/[-–]?\s*on\s+\d{4}-\d{2}-\d{2}/gi, '').trim();
+        // Remove reasoning
+        title = title.replace(/[-–]\s*Reasoning:\s*[^,\-]+/gi, '').trim();
+        title = title.replace(/[-–]?\s*because\s+[^,\-]+/gi, '').trim();
+        // Remove leading/trailing dashes or commas
+        title = title.replace(/^[-–,\s]+/, '').replace(/[-–,\s]+$/, '').trim();
+        
+        // Clean up extracted decidedBy
+        if (decidedBy) {
+          decidedBy = decidedBy.replace(/\s*[-–,]\s*$/, '').trim();
+          if (decidedBy.length < 2 || decidedBy.length > 30) decidedBy = undefined;
+        }
+        
+        // Clean up extracted reasoning
+        if (reasoning) {
+          reasoning = reasoning.replace(/\s*[-–,]\s*$/, '').trim();
+          if (reasoning.length < 3) reasoning = undefined;
+        }
+        
+        // If title is too short or just symbols, skip it
+        if (title.length < 3 || !/[a-zA-Z]/.test(title)) {
+          continue;
+        }
+        
+        items.push({
+          number: parseInt(num),
+          title: title,
+          location: location,
+          conversationId: conversationId,
+          decidedBy: decidedBy,
+          date: date,
+          reasoning: reasoning,
+          fullText: line,
+        });
+      }
+    }
+    
+    return items;
+  };
+
   const getPriorityColor = (priority: string): string => {
     switch (priority.toLowerCase()) {
       case 'high':
@@ -550,12 +682,103 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
     }
   }
 
+  // Render Decisions
+  if (isDecisions) {
+    const decisions = parseDecisions();
+    
+    // Debug: Log what we're trying to parse
+    console.log('🔍 AgentResponseDisplay - Decisions Mode:', {
+      contentPreview: content.substring(0, 200),
+      parsedCount: decisions.length,
+      isDecisions,
+    });
+    
+    // If no decisions found, show the full text as a simple message
+    if (decisions.length === 0) {
+      return (
+        <View style={styles.container}>
+          <Text style={styles.fallbackText}>{content}</Text>
+        </View>
+      );
+    }
+    
+    if (decisions.length > 0) {
+      return (
+        <View style={styles.container}>
+          {/* Decisions Header */}
+          <TouchableOpacity 
+            style={styles.sectionHeader}
+            onPress={() => toggleSection('decisions')}
+          >
+            <Text style={styles.sectionHeaderText}>
+              📋 Decisions ({decisions.length})
+            </Text>
+            <Text style={styles.expandIcon}>
+              {expandedSections.has(`decisions-${instanceId}`) ? '▼' : '▶'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Decisions List */}
+          {expandedSections.has(`decisions-${instanceId}`) && (
+            <View style={styles.itemsList}>
+              {decisions.map((item) => (
+                <TouchableOpacity
+                  key={item.number}
+                  style={[styles.itemCard, styles.decisionCard]}
+                  onPress={() => handleNavigateToConversation(item.conversationId)}
+                  activeOpacity={0.7}
+                >
+                  {/* Decision Title - prominent */}
+                  <Text style={styles.taskText}>{item.title}</Text>
+
+                  {/* Metadata Row - location, decided by, date */}
+                  <View style={styles.metadataRow}>
+                    {/* Date */}
+                    {item.date && (
+                      <View style={styles.metadataItem}>
+                        <Text style={styles.metadataIcon}>📅</Text>
+                        <Text style={styles.metadataText}>{item.date}</Text>
+                      </View>
+                    )}
+
+                    {/* Decided By */}
+                    {item.decidedBy && (
+                      <View style={styles.metadataItem}>
+                        <Text style={styles.metadataIcon}>👤</Text>
+                        <Text style={styles.metadataText}>{item.decidedBy}</Text>
+                      </View>
+                    )}
+
+                    {/* Location */}
+                    <View style={styles.metadataItem}>
+                      <Text style={styles.metadataIcon}>📍</Text>
+                      <Text style={styles.metadataText}>{item.location}</Text>
+                    </View>
+                  </View>
+
+                  {/* Reasoning (if available) */}
+                  {item.reasoning && (
+                    <View style={styles.reasoningContainer}>
+                      <Text style={styles.reasoningIcon}>💡</Text>
+                      <Text style={styles.reasoningText}>{item.reasoning}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+      );
+    }
+  }
+
   // Fallback: render as formatted text
   console.log('⚠️ AgentResponseDisplay - Fallback to plain text:', {
     contentLength: content.length,
     contentPreview: content.substring(0, 300),
     isActionItems,
     isPriorities,
+    isDecisions,
   });
   
   return (
@@ -629,6 +852,30 @@ const styles = StyleSheet.create({
   priorityCard: {
     borderLeftWidth: 4,
     borderLeftColor: '#DC2626',
+  },
+  decisionCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#3B82F6', // Blue for decisions
+  },
+  reasoningContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#EFF6FF', // Light blue background
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  reasoningIcon: {
+    fontSize: 12,
+    marginRight: 6,
+    marginTop: 2,
+  },
+  reasoningText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#1E40AF', // Dark blue text
+    fontStyle: 'italic',
+    lineHeight: 18,
   },
   taskText: {
     fontSize: 16, // Match ActionItemsList
