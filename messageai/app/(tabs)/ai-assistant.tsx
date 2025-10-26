@@ -973,7 +973,8 @@ const styles = StyleSheet.create({
     borderColor: '#10B981',
     borderWidth: 2,
     maxWidth: '95%',
-    padding: 0, // Remove padding for agent bubbles since cards handle their own spacing
+    overflow: 'hidden', // Ensure content stays within border
+    // Keep default padding from messageBubble (12)
   },
   actionItemsContainer: {
     marginTop: 12,

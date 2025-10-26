@@ -458,7 +458,7 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
 
 const styles = StyleSheet.create({
   container: {
-    padding: 12, // Add padding to the container
+    width: '100%', // Ensure container respects bubble width
   },
   summaryCard: {
     backgroundColor: '#F0F9FF',
@@ -467,11 +467,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderLeftWidth: 4,
     borderLeftColor: '#0EA5E9',
+    maxWidth: '100%', // Prevent overflow
   },
   summaryText: {
     fontSize: 14,
     color: '#0C4A6E',
     lineHeight: 20,
+    flexWrap: 'wrap', // Allow text wrapping
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -481,18 +483,21 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginBottom: 8,
+    maxWidth: '100%', // Prevent overflow
   },
   sectionHeaderText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#111827',
+    flex: 1, // Allow text to shrink if needed
   },
   expandIcon: {
     fontSize: 14,
     color: '#6B7280',
+    marginLeft: 8,
   },
   itemsList: {
-    // Removed maxHeight - let parent FlatList handle scrolling
+    width: '100%', // Ensure list respects container width
   },
   itemCard: {
     backgroundColor: '#FFFFFF',
@@ -508,6 +513,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
+    maxWidth: '100%', // Prevent cards from overflowing
   },
   priorityCard: {
     borderLeftWidth: 4,
@@ -543,16 +549,19 @@ const styles = StyleSheet.create({
   itemContent: {
     flex: 1,
     paddingRight: 60, // Space for priority badge
+    maxWidth: '100%', // Ensure content doesn't overflow
   },
   itemTitle: {
     fontSize: 15,
     fontWeight: '600',
     color: '#111827',
     marginBottom: 4,
+    flexWrap: 'wrap', // Allow title to wrap to multiple lines
   },
   itemLocation: {
     fontSize: 13,
     color: '#6B7280',
+    flexWrap: 'wrap', // Allow location to wrap
   },
   navigateIcon: {
     width: 28,
@@ -574,11 +583,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
     borderLeftWidth: 3,
     borderLeftColor: '#F59E0B',
+    maxWidth: '100%', // Prevent overflow
   },
   noteText: {
     fontSize: 12,
     color: '#92400E',
     fontStyle: 'italic',
+    flexWrap: 'wrap', // Allow text to wrap
   },
   fallbackText: {
     fontSize: 16,
