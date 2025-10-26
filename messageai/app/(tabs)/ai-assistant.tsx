@@ -67,7 +67,7 @@ interface ChatMessage {
 
 const AI_MESSAGES_KEY = '@ai_messages';
 const AI_MESSAGES_VERSION = '@ai_messages_version';
-const CURRENT_VERSION = '1.1'; // Increment to clear old cached messages
+const CURRENT_VERSION = '1.2'; // Increment to clear old cached messages
 
 export default function AIAssistant() {
   const params = useLocalSearchParams();
@@ -347,7 +347,12 @@ export default function AIAssistant() {
       /find.*priorit/i,
       /show.*priorit/i,
       /what.*decision/i,
+      /what.*decide/i,
       /track.*decision/i,
+      /find.*decision/i,
+      /show.*decision/i,
+      /decisions.*made/i,  // "what decisions were made"
+      /decisions.*about/i,  // "decisions about the budget"
       /what.*act[io]+n/i,  // Handles "action" or "actin" typos
       /find.*act[io]+n/i,
       /show.*act[io]+n/i,
