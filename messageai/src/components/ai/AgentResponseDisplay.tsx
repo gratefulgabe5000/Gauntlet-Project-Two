@@ -72,6 +72,11 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       
+      // Skip empty lines and headers
+      if (!line || line.toLowerCase().includes('here are your') || line.toLowerCase().includes('action items:')) {
+        continue;
+      }
+      
       // Format 1: "1. **Title** - Description [Context](conversationId)"
       // Example: "1. **Help with server issue** - This is an urgent task from the conversation \"Direct Chat\". The deadline is on 2025-10-23. [Context](hK58TZ1Xpa5QkCHEZXyp)"
       let match = line.match(/^(\d+)\.\s*\*\*(.+?)\*\*\s*-\s*.+?\[Context\]\((.+?)\)/i);
@@ -80,7 +85,6 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
         const [, num, title, conversationId] = match;
         // Try to extract priority and deadline from the description
         const priorityMatch = line.match(/(urgent|high|medium|low)\s+(?:priority|task)/i);
-        const deadlineMatch = line.match(/deadline[:\s]+(\d{4}-\d{2}-\d{2})/i);
         
         const priority = priorityMatch ? (priorityMatch[1].charAt(0).toUpperCase() + priorityMatch[1].slice(1).toLowerCase()) : 'Unspecified';
         
@@ -95,42 +99,9 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
         continue;
       }
       
-      // Format 2: "1. Title (Priority, Deadline: date)"
+      // Format 2: "1. Title (Priority, Deadline: date)" or "1. Title (Priority priority, Deadline: date)"
       // Example: "1. Provide help for the server issue (High priority, Deadline: 2025-10-23)"
-      match = line.match(/^(\d+)\.\s*(.+?)\s*\((High|Medium|Low|Unspecified)\s+priority(?:,\s*Deadline:\s*(.+?))?\)/i);
-      
-      if (match) {
-        const [, num, title, priority, deadline] = match;
-        
-        items.push({
-          number: parseInt(num),
-          title: title.trim(),
-          priority: priority as any,
-          location: 'From Conversation',
-          conversationId: undefined,
-          fullText: line,
-        });
-        continue;
-      }
-      
-      // Format 3: Legacy format "1. Title (Priority) - [Location](conversationId: xxx)"
-      match = line.match(/^(\d+)\.\s*(.+?)\s*\((High|Medium|Low|Unspecified)\s+Priority\)\s*-\s*\[(.+?)\]\(conversationId:\s*(.+?)\)/i);
-      
-      if (match) {
-        const [, num, title, priority, location, conversationId] = match;
-        items.push({
-          number: parseInt(num),
-          title: title.trim(),
-          priority: priority as any,
-          location: location.trim(),
-          conversationId: conversationId.trim(),
-          fullText: line,
-        });
-        continue;
-      }
-      
-      // Format 4: Simple "1. Title - Priority priority. Context: ..."
-      match = line.match(/^(\d+)\.\s*(.+?)\s*-\s*(High|Medium|Low|Unspecified)\s+priority/i);
+      match = line.match(/^(\d+)\.\s*(.+?)\s*\(([A-Za-z]+)\s+priority(?:,\s*Deadline:\s*(.+?))?\)/i);
       
       if (match) {
         const [, num, title, priority] = match;
@@ -138,7 +109,61 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
         items.push({
           number: parseInt(num),
           title: title.trim(),
-          priority: priority as any,
+          priority: (priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase()) as any,
+          location: 'From Conversation',
+          conversationId: undefined,
+          fullText: line,
+        });
+        continue;
+      }
+      
+      // Format 3: "1. Title (Priority Priority) - [Location]" or similar variations
+      // Example: "1. Help with server issue (High Priority) – Deadline: 2025-10-23 [Direct Chat]"
+      match = line.match(/^(\d+)\.\s*(.+?)\s*\(([A-Za-z]+)\s+Priority\)/i);
+      
+      if (match) {
+        const [, num, title, priority] = match;
+        // Try to extract location from the rest
+        const locationMatch = line.match(/\[([^\]]+)\]/);
+        const location = locationMatch ? locationMatch[1] : 'From Conversation';
+        
+        items.push({
+          number: parseInt(num),
+          title: title.trim(),
+          priority: (priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase()) as any,
+          location: location,
+          conversationId: undefined,
+          fullText: line,
+        });
+        continue;
+      }
+      
+      // Format 4: Legacy format "1. Title (Priority) - [Location](conversationId: xxx)"
+      match = line.match(/^(\d+)\.\s*(.+?)\s*\(([A-Za-z]+)\s*(?:Priority|priority)\)\s*-\s*\[(.+?)\]\(conversationId:\s*(.+?)\)/i);
+      
+      if (match) {
+        const [, num, title, priority, location, conversationId] = match;
+        items.push({
+          number: parseInt(num),
+          title: title.trim(),
+          priority: (priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase()) as any,
+          location: location.trim(),
+          conversationId: conversationId.trim(),
+          fullText: line,
+        });
+        continue;
+      }
+      
+      // Format 5: Simple "1. Title - Priority priority. Context: ..."
+      match = line.match(/^(\d+)\.\s*(.+?)\s*-\s*([A-Za-z]+)\s+priority/i);
+      
+      if (match) {
+        const [, num, title, priority] = match;
+        
+        items.push({
+          number: parseInt(num),
+          title: title.trim(),
+          priority: (priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase()) as any,
           location: 'From Conversation',
           conversationId: undefined,
           fullText: line,
@@ -156,6 +181,11 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
+      
+      // Skip empty lines and headers
+      if (!line || line.toLowerCase().includes('your current priorities') || line.toLowerCase().includes('priority messages:')) {
+        continue;
+      }
       
       // Format: '1. "Urgent: Server is down!" - This message was sent by Collaborator in the Direct Chat conversation on 2025-10-25 at 01:12:10.'
       const match = line.match(/^(\d+)\.\s*"(.+?)"\s*-\s*This message was (?:sent by|also sent by)\s+(.+?)\s+in the\s+(.+?)\s+conversation/i);
