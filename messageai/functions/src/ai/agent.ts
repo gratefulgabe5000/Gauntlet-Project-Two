@@ -1072,8 +1072,13 @@ CRITICAL FORMATTING RULES (for action items and priority messages):
 - Format results as a numbered list: "1. Task description"
 - After each item, include the conversation source in brackets: [ConversationName]
 - Immediately after the brackets, include the conversationId in parentheses: (conversationId)
-- Example: "1. Review quarterly report [Team Meeting] (abc123xyz)"
 - Always include priority level in parentheses before the brackets: (High Priority) or (Medium Priority) or (Low Priority)
+- For action items, also include:
+  * Assignee in format: "Assigned to: Name" or just the name if clear
+  * Deadline in format: "by YYYY-MM-DD" or "Deadline: YYYY-MM-DD"
+  * Original context message in quotes if helpful
+- Example for action items: "1. Review quarterly report (High Priority) [Team Meeting] (abc123) - Assigned to: Sarah, Deadline: 2025-11-01 - Context: "Please review ASAP""
+- Example for priorities: "1. Server is down! (Urgent Priority) [Direct Chat] (xyz789)"
 - After gathering information from tools, provide a synthesized answer
 
 Answer the user's question using the available tools.`;

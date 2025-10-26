@@ -31,6 +31,9 @@ interface ParsedActionItem {
   priority: 'High' | 'Medium' | 'Low' | 'Unspecified';
   location: string;
   conversationId?: string;
+  assignee?: string;
+  deadline?: string;
+  context?: string;
   fullText: string;
 }
 
@@ -94,44 +97,80 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
         let priority = 'Unspecified';
         let location = 'From Conversation';
         let conversationId: string | undefined;
+        let assignee: string | undefined;
+        let deadline: string | undefined;
+        let context: string | undefined;
         
         // Try to extract priority from parentheses: (High Priority) or (High priority)
         const priorityMatch = restOfLine.match(/\(([A-Za-z]+)\s+[Pp]riority\)/);
         if (priorityMatch) {
           priority = priorityMatch[1].charAt(0).toUpperCase() + priorityMatch[1].slice(1).toLowerCase();
-          // Remove priority from title
-          title = restOfLine.replace(/\([A-Za-z]+\s+[Pp]riority\)/, '').trim();
         }
         
-      // Try to extract location from brackets: [Direct Chat]
-      const locationMatch = restOfLine.match(/\[([^\]]+)\]/);
-      if (locationMatch) {
-        location = locationMatch[1];
-        // Remove location from title
-        title = title.replace(/\[[^\]]+\]/, '').trim();
-      }
-      
-      // Try to extract conversationId from (id) pattern that comes RIGHT AFTER location brackets
-      // Pattern: [Location] (conversationId) or just (conversationId) anywhere
-      const idMatch = restOfLine.match(/\]\s*\(([^)]+)\)/);  // After brackets
-      if (idMatch) {
-        conversationId = idMatch[1];
-        title = title.replace(/\([^)]+\)/, '').trim();
-      } else {
-        // Fallback: try to find any (id-looking) pattern with hyphens or long alphanumeric
-        const fallbackIdMatch = restOfLine.match(/\(([a-zA-Z0-9]{15,})\)/);
-        if (fallbackIdMatch) {
-          conversationId = fallbackIdMatch[1];
-          title = title.replace(/\([a-zA-Z0-9]{15,}\)/, '').trim();
+        // Try to extract location from brackets: [Direct Chat]
+        const locationMatch = restOfLine.match(/\[([^\]]+)\]/);
+        if (locationMatch) {
+          location = locationMatch[1];
         }
-      }
-      
-      // Remove the old [Context](id) pattern if present
-      const contextMatch = restOfLine.match(/\[Context\]\(([^)]+)\)/);
-      if (contextMatch && !conversationId) {
-        conversationId = contextMatch[1];
+        
+        // Try to extract conversationId from (id) pattern that comes RIGHT AFTER location brackets
+        // Pattern: [Location] (conversationId) or just (conversationId) anywhere
+        const idMatch = restOfLine.match(/\]\s*\(([^)]+)\)/);  // After brackets
+        if (idMatch) {
+          conversationId = idMatch[1];
+        } else {
+          // Fallback: try to find any (id-looking) pattern with hyphens or long alphanumeric
+          const fallbackIdMatch = restOfLine.match(/\(([a-zA-Z0-9]{15,})\)/);
+          if (fallbackIdMatch) {
+            conversationId = fallbackIdMatch[1];
+          }
+        }
+        
+        // Remove the old [Context](id) pattern if present
+        const contextMatch = restOfLine.match(/\[Context\]\(([^)]+)\)/);
+        if (contextMatch && !conversationId) {
+          conversationId = contextMatch[1];
+        }
+        
+        // Extract assignee from patterns like "Assigned to: Name" or "- Name" or just "Name"
+        const assigneeMatch1 = restOfLine.match(/Assigned to:\s*([^,\-]+)/i);
+        const assigneeMatch2 = restOfLine.match(/[-–]\s*([^,\-]+?)(?=\s*[-–,]|$)/);
+        if (assigneeMatch1) {
+          assignee = assigneeMatch1[1].trim();
+        } else if (assigneeMatch2 && !assigneeMatch2[1].match(/deadline|context|by \d/i)) {
+          assignee = assigneeMatch2[1].trim();
+        }
+        
+        // Extract deadline from patterns like "Deadline: 2025-11-01" or "by 2025-11-01"
+        const deadlineMatch1 = restOfLine.match(/Deadline:\s*(\d{4}-\d{2}-\d{2})/i);
+        const deadlineMatch2 = restOfLine.match(/by\s+(\d{4}-\d{2}-\d{2})/i);
+        if (deadlineMatch1) {
+          deadline = deadlineMatch1[1];
+        } else if (deadlineMatch2) {
+          deadline = deadlineMatch2[1];
+        }
+        
+        // Extract context from quoted text: Context: "text" or just "text"
+        const contextMatch1 = restOfLine.match(/Context:\s*"([^"]+)"/i);
+        const contextMatch2 = restOfLine.match(/"([^"]{10,})"/);  // At least 10 chars
+        if (contextMatch1) {
+          context = contextMatch1[1];
+        } else if (contextMatch2) {
+          context = contextMatch2[1];
+        }
+        
+        // Clean up title - remove ALL metadata
+        title = restOfLine;
+        title = title.replace(/\([A-Za-z]+\s+[Pp]riority\)/g, '').trim();
+        title = title.replace(/\[[^\]]+\]/g, '').trim();
+        title = title.replace(/\([A-Za-z0-9]{15,}\)/g, '').trim();
+        title = title.replace(/[-–]\s*Assigned to:[^,\-]+(,|\s|$)/gi, '').trim();
+        title = title.replace(/[-–]\s*Deadline:\s*\d{4}-\d{2}-\d{2}/gi, '').trim();
+        title = title.replace(/[-–]\s*by\s+\d{4}-\d{2}-\d{2}/gi, '').trim();
+        title = title.replace(/[-–]\s*Context:\s*"[^"]+"/gi, '').trim();
+        title = title.replace(/"[^"]{10,}"/g, '').trim(); // Remove long quoted context
+        title = title.replace(/^[-–\s]+/, '').replace(/[-–\s]+$/, '').trim();
         title = title.replace(/\[Context\]\([^)]+\)/, '').trim();
-      }
         
         // Extract priority from keywords in the text
         if (priority === 'Unspecified') {
@@ -141,11 +180,11 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
           else if (/\bUrgent\b/i.test(restOfLine)) priority = 'High';
         }
         
-        // Clean up title - remove extra dashes, deadlines, etc
-        title = title.replace(/^[-–—]\s*/, '').trim();
-        title = title.replace(/\s*[-–—]\s*Deadline:.*$/, '').trim();
-        title = title.replace(/\s*[-–—]\s*$/, '').trim();
-        title = title.replace(/\s+by\s+\d{4}-\d{2}-\d{2}.*$/, '').trim();
+        // Clean up extracted assignee
+        if (assignee) {
+          assignee = assignee.replace(/\s*[-–,]\s*$/, '').trim();
+          if (assignee.length < 2 || assignee.length > 30) assignee = undefined;
+        }
         
         // If title is too short or just symbols, skip it
         if (title.length < 3 || !/[a-zA-Z]/.test(title)) {
@@ -158,6 +197,9 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
           priority: priority as any,
           location: location,
           conversationId: conversationId,
+          assignee: assignee,
+          deadline: deadline,
+          context: context,
           fullText: line,
         });
       }
@@ -236,18 +278,20 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
           }
         }
         
-        // THIRD: Clean up title - remove EVERYTHING we extracted
+        // THIRD: Clean up title - remove EVERYTHING we extracted and priority labels
         title = restOfLine;
-        // Remove priority parentheses
-        title = title.replace(/\([A-Za-z]+\s+[Pp]riority\)/g, '').trim();
+        // Remove priority indicators (both in parentheses and as prefixes)
+        title = title.replace(/\(Urgent\)/gi, '').trim();
+        title = title.replace(/\(High Priority\)/gi, '').trim();
+        title = title.replace(/\(Medium Priority\)/gi, '').trim();
+        title = title.replace(/\(Low Priority\)/gi, '').trim();
+        title = title.replace(/^(Urgent|Important|High|Medium|Low):\s*/i, '').trim();
         // Remove location brackets
         title = title.replace(/\[[^\]]+\]/g, '').trim();
         // Remove conversationId parentheses (any long alphanumeric in parens)
         title = title.replace(/\([A-Za-z0-9]{15,}\)/g, '').trim();
         // Remove quotes
         title = title.replace(/^["']+|["']+$/g, '').trim();
-        // Remove "Urgent:" or "High:" prefix
-        title = title.replace(/^(Urgent|High):\s*/i, '').trim();
         // Remove extra descriptive text
         title = title.replace(/\s*[-–—]\s*This message.*$/i, '').trim();
         title = title.replace(/\s+sent by.*$/i, '').trim();
@@ -380,13 +424,23 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
                   {/* Task Title - prominent like ActionItemsList */}
                   <Text style={styles.taskText}>{item.title}</Text>
 
-                  {/* Metadata Row - location and priority */}
+                  {/* Metadata Row - assignee, deadline, and priority */}
                   <View style={styles.metadataRow}>
-                    {/* Location */}
-                    <View style={styles.metadataItem}>
-                      <Text style={styles.metadataIcon}>📍</Text>
-                      <Text style={styles.metadataText}>{item.location}</Text>
-                    </View>
+                    {/* Assignee */}
+                    {item.assignee && (
+                      <View style={styles.metadataItem}>
+                        <Text style={styles.metadataIcon}>👤</Text>
+                        <Text style={styles.metadataText}>{item.assignee}</Text>
+                      </View>
+                    )}
+
+                    {/* Deadline */}
+                    {item.deadline && (
+                      <View style={styles.metadataItem}>
+                        <Text style={styles.metadataIcon}>📅</Text>
+                        <Text style={styles.metadataText}>{item.deadline}</Text>
+                      </View>
+                    )}
 
                     {/* Priority Badge */}
                     <View style={[styles.priorityBadgeInline, { backgroundColor: getPriorityColor(item.priority) }]}>
@@ -395,6 +449,16 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
                       </Text>
                     </View>
                   </View>
+
+                  {/* Context Quote - embedded message */}
+                  {item.context && (
+                    <View style={styles.contextContainer}>
+                      <Text style={styles.contextIcon}>💬</Text>
+                      <Text style={styles.contextText} numberOfLines={2}>
+                        "{item.context}"
+                      </Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               ))}
             </View>
@@ -618,6 +682,28 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#ffffff',
+  },
+  contextContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#f9fafb',
+    padding: 10,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#3b82f6',
+    marginTop: 8,
+  },
+  contextIcon: {
+    fontSize: 12,
+    marginRight: 6,
+    marginTop: 2,
+  },
+  contextText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#6b7280',
+    fontStyle: 'italic',
+    lineHeight: 18,
   },
   noteCard: {
     backgroundColor: '#FFFBEB',
