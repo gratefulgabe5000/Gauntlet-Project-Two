@@ -322,27 +322,23 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
                   onPress={() => handleNavigateToConversation(item.conversationId)}
                   activeOpacity={0.7}
                 >
-                  {/* Priority Badge */}
-                  <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(item.priority) }]}>
-                    <Text style={styles.priorityBadgeText}>
-                      {getPriorityIcon(item.priority)} {item.priority.toUpperCase()}
-                    </Text>
-                  </View>
+                  {/* Task Title - prominent like ActionItemsList */}
+                  <Text style={styles.taskText}>{item.title}</Text>
 
-                  {/* Item Number */}
-                  <View style={styles.itemNumber}>
-                    <Text style={styles.itemNumberText}>{item.number}</Text>
-                  </View>
+                  {/* Metadata Row - location and priority */}
+                  <View style={styles.metadataRow}>
+                    {/* Location */}
+                    <View style={styles.metadataItem}>
+                      <Text style={styles.metadataIcon}>📍</Text>
+                      <Text style={styles.metadataText}>{item.location}</Text>
+                    </View>
 
-                  {/* Item Content */}
-                  <View style={styles.itemContent}>
-                    <Text style={styles.itemTitle}>{item.title}</Text>
-                    <Text style={styles.itemLocation}>📍 {item.location}</Text>
-                  </View>
-
-                  {/* Navigate Icon */}
-                  <View style={styles.navigateIcon}>
-                    <Text style={styles.navigateIconText}>→</Text>
+                    {/* Priority Badge */}
+                    <View style={[styles.priorityBadgeInline, { backgroundColor: getPriorityColor(item.priority) }]}>
+                      <Text style={styles.priorityText}>
+                        {getPriorityIcon(item.priority)} {item.priority.toUpperCase()}
+                      </Text>
+                    </View>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -405,27 +401,23 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
                   onPress={() => handleNavigateToConversation(item.conversationId)}
                   activeOpacity={0.7}
                 >
-                  {/* Priority Badge */}
-                  <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(item.priority) }]}>
-                    <Text style={styles.priorityBadgeText}>
-                      {getPriorityIcon(item.priority)} {item.priority.toUpperCase()}
-                    </Text>
-                  </View>
+                  {/* Message Title - prominent */}
+                  <Text style={styles.taskText}>{item.title}</Text>
 
-                  {/* Item Number */}
-                  <View style={styles.itemNumber}>
-                    <Text style={styles.itemNumberText}>{item.number}</Text>
-                  </View>
+                  {/* Metadata Row - location and priority */}
+                  <View style={styles.metadataRow}>
+                    {/* Location */}
+                    <View style={styles.metadataItem}>
+                      <Text style={styles.metadataIcon}>📍</Text>
+                      <Text style={styles.metadataText}>{item.location}</Text>
+                    </View>
 
-                  {/* Item Content */}
-                  <View style={styles.itemContent}>
-                    <Text style={styles.itemTitle}>{item.title}</Text>
-                    <Text style={styles.itemLocation}>📍 {item.location}</Text>
-                  </View>
-
-                  {/* Navigate Icon */}
-                  <View style={styles.navigateIcon}>
-                    <Text style={styles.navigateIconText}>→</Text>
+                    {/* Priority Badge */}
+                    <View style={[styles.priorityBadgeInline, { backgroundColor: getPriorityColor(item.priority) }]}>
+                      <Text style={styles.priorityText}>
+                        {getPriorityIcon(item.priority)} {item.priority.toUpperCase()}
+                      </Text>
+                    </View>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -509,77 +501,59 @@ const styles = StyleSheet.create({
   itemCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
+    padding: 16, // Increased for better spacing like ActionItemsList
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    flexDirection: 'row',
-    alignItems: 'center', // Changed back to center for better alignment
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
-    elevation: 1,
-    maxWidth: '100%', // Prevent cards from overflowing
+    elevation: 2, // Match ActionItemsList elevation
   },
   priorityCard: {
     borderLeftWidth: 4,
     borderLeftColor: '#DC2626',
   },
-  priorityBadge: {
-    paddingHorizontal: 8,
+  taskText: {
+    fontSize: 16, // Match ActionItemsList
+    fontWeight: '500',
+    color: '#1f2937',
+    marginBottom: 12,
+    lineHeight: 22,
+  },
+  metadataRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  metadataItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 6,
-    position: 'absolute',
-    top: 8,
-    right: 8,
+    borderRadius: 12,
   },
-  priorityBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '700',
+  metadataIcon: {
+    fontSize: 12,
+    marginRight: 4,
   },
-  itemNumber: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#EEF2FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  itemNumberText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#4F46E5',
-  },
-  itemContent: {
-    flex: 1,
-    paddingRight: 8, // Reduced from 60 - priority badge overlaps anyway
-    maxWidth: '100%', // Ensure content doesn't overflow
-  },
-  itemTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  itemLocation: {
+  metadataText: {
     fontSize: 13,
-    color: '#6B7280',
+    color: '#4b5563',
   },
-  navigateIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#EEF2FF',
-    justifyContent: 'center',
-    alignItems: 'center',
+  priorityBadgeInline: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 'auto', // Push to right
   },
-  navigateIconText: {
-    fontSize: 16,
-    color: '#4F46E5',
-    fontWeight: '600',
+  priorityText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#ffffff',
   },
   noteCard: {
     backgroundColor: '#FFFBEB',
