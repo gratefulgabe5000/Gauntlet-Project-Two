@@ -583,12 +583,12 @@ const styles = StyleSheet.create({
   },
   noteCard: {
     backgroundColor: '#FFFBEB',
-    padding: 10,
+    padding: 12, // Increased from 10 for better spacing
     borderRadius: 8,
     marginTop: 8,
     borderLeftWidth: 3,
     borderLeftColor: '#F59E0B',
-    maxWidth: '100%', // Prevent overflow
+    width: '100%', // Ensure full width
   },
   noteText: {
     fontSize: 12,
