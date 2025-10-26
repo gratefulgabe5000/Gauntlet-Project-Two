@@ -145,7 +145,7 @@ export default function Conversations() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.title}>Messages</Text>
+          <Text style={styles.title}>MessageAI</Text>
           {/* Priority Filter Button (Phase 3.1) */}
           <TouchableOpacity 
             style={styles.filterButton}

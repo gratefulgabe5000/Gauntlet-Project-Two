@@ -149,7 +149,7 @@ export const getPriorityMessages = functions.https.onCall(async (data, context) 
       limit,
     });
 
-    // Step 1: Get user's last 10 conversation IDs (most recent first)
+    // Step 1: Get user's last 3 conversation IDs (most recent first)
     // Try lastMessageAt first, fall back to updatedAt
     let conversationsSnapshot;
     try {
@@ -158,7 +158,7 @@ export const getPriorityMessages = functions.https.onCall(async (data, context) 
         .collection('conversations')
         .where('participantIds', 'array-contains', userId)
         .orderBy('lastMessageAt', 'desc') // Order by most recent first
-        .limit(10) // Only check last 10 conversations for performance
+        .limit(3) // Only check last 3 conversations for performance
         .get();
       
       if (conversationsSnapshot.empty) {
@@ -167,7 +167,7 @@ export const getPriorityMessages = functions.https.onCall(async (data, context) 
           .collection('conversations')
           .where('participantIds', 'array-contains', userId)
           .orderBy('updatedAt', 'desc')
-          .limit(10)
+          .limit(3)
           .get();
       }
     } catch (error) {
@@ -176,7 +176,7 @@ export const getPriorityMessages = functions.https.onCall(async (data, context) 
         .collection('conversations')
         .where('participantIds', 'array-contains', userId)
         .orderBy('updatedAt', 'desc')
-        .limit(10)
+        .limit(3)
         .get();
     }
 
@@ -326,7 +326,7 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
     const conversationMap = new Map<string, string>();
 
     if (targetConversationIds.length === 0) {
-      // Get user's last 10 conversations ordered by most recent message
+      // Get user's last 3 conversations ordered by most recent message
       // Try lastMessageAt first, fall back to updatedAt if needed
       let conversationsSnapshot;
       try {
@@ -335,7 +335,7 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
           .collection('conversations')
           .where('participantIds', 'array-contains', userId)
           .orderBy('lastMessageAt', 'desc') // Order by most recent first
-          .limit(10) // Only check last 10 conversations for performance
+          .limit(3) // Only check last 3 conversations for performance
           .get();
         
         // If no results with lastMessageAt, try updatedAt
@@ -346,7 +346,7 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
             .collection('conversations')
             .where('participantIds', 'array-contains', userId)
             .orderBy('updatedAt', 'desc')
-            .limit(10)
+            .limit(3)
             .get();
         }
       } catch (error) {
@@ -357,7 +357,7 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
           .collection('conversations')
           .where('participantIds', 'array-contains', userId)
           .orderBy('updatedAt', 'desc')
-          .limit(10)
+          .limit(3)
           .get();
       }
 
@@ -576,7 +576,7 @@ export const getConversationDecisions = functions.https.onCall(async (data, cont
     const conversationMap = new Map<string, string>();
 
     if (targetConversationIds.length === 0) {
-      // Get user's last 10 conversations ordered by most recent message
+      // Get user's last 3 conversations ordered by most recent message
       let conversationsSnapshot;
       try {
         conversationsSnapshot = await admin
@@ -584,7 +584,7 @@ export const getConversationDecisions = functions.https.onCall(async (data, cont
           .collection('conversations')
           .where('participantIds', 'array-contains', userId)
           .orderBy('lastMessageAt', 'desc')
-          .limit(10) // Only check last 10 conversations for performance
+          .limit(3) // Only check last 3 conversations for performance
           .get();
         
         if (conversationsSnapshot.empty) {
@@ -593,7 +593,7 @@ export const getConversationDecisions = functions.https.onCall(async (data, cont
             .collection('conversations')
             .where('participantIds', 'array-contains', userId)
             .orderBy('updatedAt', 'desc')
-            .limit(10)
+            .limit(3)
             .get();
         }
       } catch (error) {
@@ -602,7 +602,7 @@ export const getConversationDecisions = functions.https.onCall(async (data, cont
           .collection('conversations')
           .where('participantIds', 'array-contains', userId)
           .orderBy('updatedAt', 'desc')
-          .limit(10)
+          .limit(3)
           .get();
       }
 
@@ -818,7 +818,7 @@ export const summarizeConversation = functions.https.onCall(async (data, context
       .where('conversationId', '==', conversationId)
       .where('encrypted', '==', false)
       .orderBy('timestamp', 'asc')
-      .limit(100)
+      .limit(50) // Reduced from 100 for faster performance
       .get();
 
     // Count encrypted messages
@@ -1018,7 +1018,7 @@ export const searchAllConversations = functions.https.onCall(async (data, contex
           .where('conversationId', 'in', batch)
           .where('encrypted', '==', false)
           .orderBy('timestamp', 'desc')
-          .limit(100)
+          .limit(50) // Reduced from 100 for faster performance
           .get();
 
         messagesSnapshot.forEach((doc) => {

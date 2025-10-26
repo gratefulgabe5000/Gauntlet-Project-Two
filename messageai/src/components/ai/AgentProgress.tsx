@@ -5,7 +5,7 @@
  * Displays the agent's thinking process and tool usage in real-time
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -51,7 +51,34 @@ export default function AgentProgress({
   status = 'thinking',
   currentTool,
 }: AgentProgressProps) {
-  if (!isThinking && toolCalls.length === 0) {
+  // State to track thinking progress messages
+  const [thinkingMessage, setThinkingMessage] = useState<string | null>(null);
+
+  // Show progressive thinking messages
+  useEffect(() => {
+    if (isThinking && status !== 'complete') {
+      // First message after 5 seconds
+      const timer1 = setTimeout(() => {
+        setThinkingMessage('Thinking deeply...');
+      }, 5000); // 5 seconds
+
+      // Second message after 10 seconds
+      const timer2 = setTimeout(() => {
+        setThinkingMessage('Still thinking... there is a lot of information to go through!');
+      }, 10000); // 10 seconds
+
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        setThinkingMessage(null);
+      };
+    } else {
+      setThinkingMessage(null);
+    }
+  }, [isThinking, status]);
+
+  // Hide completely if not thinking or if complete
+  if (!isThinking || status === 'complete') {
     return null;
   }
 
@@ -92,55 +119,15 @@ export default function AgentProgress({
         )}
       </View>
 
-      {/* Tool Calls */}
-      {toolCalls.length > 0 && (
-        <ScrollView 
-          style={styles.toolCallsContainer}
-          nestedScrollEnabled={true}
-          showsVerticalScrollIndicator={false}
-        >
-          {toolCalls.map((toolCall, index) => {
-            const icon = TOOL_ICONS[toolCall.tool] || 'cog';
-            const label = TOOL_LABELS[toolCall.tool] || toolCall.tool;
-            const hasResults = toolCall.result && !toolCall.result.error;
-
-            return (
-              <View key={index} style={styles.toolCallItem}>
-                <View style={styles.toolCallHeader}>
-                  <MaterialCommunityIcons 
-                    name={icon as any} 
-                    size={18} 
-                    color={hasResults ? '#4CAF50' : '#FF9800'} 
-                  />
-                  <Text style={styles.toolCallLabel}>{label}</Text>
-                  {hasResults && (
-                    <MaterialCommunityIcons 
-                      name="check" 
-                      size={16} 
-                      color="#4CAF50" 
-                      style={styles.checkIcon}
-                    />
-                  )}
-                </View>
-                
-                {/* Show result summary */}
-                {hasResults && (
-                  <View style={styles.resultSummary}>
-                    {renderResultSummary(toolCall.tool, toolCall.result)}
-                  </View>
-                )}
-
-                {/* Show error if any */}
-                {toolCall.result?.error && (
-                  <Text style={styles.errorText}>
-                    Error: {toolCall.result.error}
-                  </Text>
-                )}
-              </View>
-            );
-          })}
-        </ScrollView>
+      {/* Show progressive thinking messages */}
+      {thinkingMessage && (
+        <View style={styles.deepThinkingContainer}>
+          <Text style={styles.deepThinkingText}>{thinkingMessage}</Text>
+        </View>
       )}
+
+      {/* Tool Calls - HIDDEN per user request */}
+      {/* Users don't want to see individual tool progress items */}
 
       {/* Progress Indicator */}
       {isThinking && status !== 'complete' && (
@@ -162,44 +149,56 @@ function renderResultSummary(tool: string, result: any): React.ReactNode {
 
   switch (tool) {
     case 'getUserConversations':
+      const convCount = result.count || 0;
+      if (convCount === 0) return null; // Don't show 0 items
       return (
         <Text style={styles.summaryText}>
-          Found {result.count || 0} conversations
+          Found {convCount} conversations
         </Text>
       );
     
     case 'getPriorityMessages':
+      const priorityCount = result.count || 0;
+      if (priorityCount === 0) return null; // Don't show 0 items
       return (
         <Text style={styles.summaryText}>
-          Found {result.count || 0} priority messages
+          Found {priorityCount} priority messages
         </Text>
       );
     
     case 'getConversationActionItems':
+      const actionCount = result.actionItems?.length || 0;
+      if (actionCount === 0) return null; // Don't show 0 items
       return (
         <Text style={styles.summaryText}>
-          Found {result.actionItems?.length || 0} action items
+          Found {actionCount} action items
         </Text>
       );
     
     case 'getConversationDecisions':
+      const decisionCount = result.decisions?.length || 0;
+      if (decisionCount === 0) return null; // Don't show 0 items
       return (
         <Text style={styles.summaryText}>
-          Found {result.decisions?.length || 0} decisions
+          Found {decisionCount} decisions
         </Text>
       );
     
     case 'summarizeConversation':
+      const msgCount = result.messageCount || 0;
+      if (msgCount === 0) return null; // Don't show 0 items
       return (
         <Text style={styles.summaryText}>
-          Summarized {result.messageCount || 0} messages
+          Summarized {msgCount} messages
         </Text>
       );
     
     case 'searchAllConversations':
+      const searchCount = result.count || 0;
+      if (searchCount === 0) return null; // Don't show 0 items
       return (
         <Text style={styles.summaryText}>
-          Found {result.count || 0} results
+          Found {searchCount} results
         </Text>
       );
     
@@ -240,6 +239,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#657786',
     fontWeight: '500',
+  },
+  deepThinkingContainer: {
+    marginTop: 4,
+    paddingLeft: 28, // Align with status text
+  },
+  deepThinkingText: {
+    fontSize: 13,
+    color: '#657786',
+    fontStyle: 'italic',
   },
   toolCallsContainer: {
     maxHeight: 200,

@@ -15,6 +15,7 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Keyboard,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -367,9 +368,12 @@ export default function AIAssistant() {
     const shouldUseAgent = agentTriggers.some(regex => regex.test(inputText.trim()));
 
     if (shouldUseAgent) {
-      // Route to agent
-      await handleAgentQuery(inputText.trim());
+      // Save query and clear input immediately
+      const query = inputText.trim();
       setInputText('');
+      Keyboard.dismiss(); // Dismiss keyboard when sending message
+      // Route to agent
+      await handleAgentQuery(query);
       return;
     }
 
@@ -384,6 +388,7 @@ export default function AIAssistant() {
     // Add user message
     setMessages((prev) => [...prev, userMessage]);
     setInputText('');
+    Keyboard.dismiss(); // Dismiss keyboard when sending message
     setIsLoading(true);
 
     try {
@@ -974,7 +979,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0FDF4',
     borderColor: '#10B981',
     borderWidth: 2,
-    maxWidth: '95%',
+    width: '95%',
     overflow: 'hidden', // Ensure content stays within border
     // Keep default padding from messageBubble (12)
   },

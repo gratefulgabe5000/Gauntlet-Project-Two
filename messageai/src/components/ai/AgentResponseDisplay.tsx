@@ -827,6 +827,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#111827',
     flex: 1, // Allow text to shrink if needed
+    minWidth: 0, // Prevent flex from making text disappear
   },
   expandIcon: {
     fontSize: 14,

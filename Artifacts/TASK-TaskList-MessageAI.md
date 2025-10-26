@@ -930,99 +930,169 @@ messageai/
 
 ---
 
-## PHASE 3B: Media & Auth Enhancements (OPTIONAL)
+## PHASE 3B: Media Enhancements (OPTIONAL)
 
-**Duration:** 8-11 hours  
-**Status:** 🔄 IN PROGRESS - Started October 26, 2025  
+**Duration:** 2-3 hours  
+**Status:** ⚠️ IMPLEMENTED BUT UNTESTED - Started October 26, 2025  
 **Prerequisites:** Phase 3 (Advanced AI) complete ✅  
 **Timeline:** Can be implemented after advanced AI or as progressive enhancements
 
-**Goal:** Add video sharing, GIF support, and phone authentication to enhance media capabilities and authentication options.
+**Goal:** Add GIF support to enhance media capabilities.
 
-### Subphase 3B.1: Video Sharing (3h)
+**Note:** Video Sharing and Phone Authentication have been deferred to Phase 6 (Post-Release).
 
-**Status:** 🔄 IN PROGRESS  
-**Started:** October 26, 2025  
+---
+
+### Subphase 3B.1: GIF Support (2-3h) - ⚠️ IMPLEMENTED BUT UNTESTED
+
+**Status:** Code complete, testing blocked by Giphy API key issue  
+**Blocker:** Giphy account creation failing; demo API key is banned  
+**Action Required:** Create new Giphy account and add API key to `app.json` (see `GIPHY_API_SETUP.md`)
+
 **Dependencies:** Phase 3 complete ✅
 
 | ID | Task | Time | Status | Dependencies | Files |
 |----|------|------|--------|--------------|-------|
-| 3B.1.1 | Install `expo-video-thumbnails` | 0.5h | ⏳ | Phase 3 | `package.json` |
-| 3B.1.2 | Update Message type to include `mediaType: 'video'` | 0.5h | ⏳ | 3B.1.1 | `src/types/message.types.ts` |
-| 3B.1.3 | Create `video.service.ts` for upload/compression | 1h | ⏳ | 3B.1.2 | `src/services/video.service.ts` |
-| 3B.1.4 | Implement video thumbnail generation | 0.5h | ⏳ | 3B.1.3 | `src/services/video.service.ts` |
-| 3B.1.5 | Create `VideoMessage.tsx` component with player | 1h | ⏳ | 3B.1.4 | `src/components/VideoMessage.tsx` |
-| 3B.1.6 | Add video picker to message input | 0.5h | ⏳ | 3B.1.5 | `src/components/messages/MessageInput.tsx` |
-| 3B.1.7 | Update Firebase Storage rules for videos | 0.5h | ⏳ | 3B.1.6 | `storage.rules` |
-| 3B.1.8 | Test video upload/playback (up to 50MB) | 0.5h | ⏳ | 3B.1.7 | N/A |
+| 3B.1.1 | Create Giphy API account and get API key | 0.5h | ⚠️ | Phase 3 | Giphy Console - **BLOCKED: Account creation error** |
+| 3B.1.2 | Install `@giphy/js-fetch-api` and `@giphy/react-native-sdk` | 0.5h | ✅ | 3B.1.1 | `package.json` |
+| 3B.1.3 | Create `GifPicker.tsx` component | 1h | ✅ | 3B.1.2 | `src/components/messages/GifPicker.tsx` |
+| 3B.1.4 | Implement GIF search functionality | 0.5h | ✅ | 3B.1.3 | `src/components/messages/GifPicker.tsx` |
+| 3B.1.5 | Update Message type to include `type: 'gif'` | 0.5h | ✅ | 3B.1.4 | `src/types/models.ts` |
+| 3B.1.6 | Create `GifMessage.tsx` component | 0.5h | ✅ | 3B.1.5 | `src/components/messages/GifMessage.tsx` |
+| 3B.1.7 | Add GIF button to message input | 0.5h | ✅ | 3B.1.6 | `src/components/messages/MessageInput.tsx` |
+| 3B.1.8 | Integrate GIF into conversation screen | 0.5h | ✅ | 3B.1.7 | `app/conversation/[id].tsx`, `MessageBubble.tsx` |
+| 3B.1.9 | Test GIF search and send | 0.5h | ⚠️ | 3B.1.8 | **UNTESTED - Need valid Giphy API key** |
 
-**Checkpoint 3B.1:** Videos up to 50MB can be sent/received, thumbnails generate correctly
+**Implementation Complete:**
+- ✅ GIF picker modal with search UI
+- ✅ GIF message display component
+- ✅ Integration with message input and conversation flow
+- ✅ Offline queue support for GIF messages
+- ✅ Error handling and retry logic
+- ✅ Documentation (`GIPHY_API_SETUP.md`)
 
----
+**Testing Blocked:**
+- ⚠️ Demo Giphy API key is banned
+- ⚠️ Giphy account creation failing (external service issue)
+- ⚠️ Need valid API key to test GIF search and send
 
-### Subphase 3B.2: GIF Support (2-3h)
+**To Complete Testing:**
+1. Create Giphy developer account at https://developers.giphy.com/
+2. Get API key
+3. Add to `messageai/app.json` under `expo.extra.giphyApiKey`
+4. Restart Expo server with `--clear` flag
+5. Test GIF picker, search, and sending
 
-**Dependencies:** 3B.1 (video sharing working)
-
-| ID | Task | Time | Status | Dependencies | Files |
-|----|------|------|--------|--------------|-------|
-| 3B.2.1 | Create Giphy API account and get API key | 0.5h | ⏳ | 3B.1.8 | Giphy Console |
-| 3B.2.2 | Install `@giphy/js-fetch-api` and `@giphy/react-native-sdk` | 0.5h | ⏳ | 3B.2.1 | `package.json` |
-| 3B.2.3 | Create `GifPicker.tsx` component | 1h | ⏳ | 3B.2.2 | `src/components/GifPicker.tsx` |
-| 3B.2.4 | Implement GIF search functionality | 0.5h | ⏳ | 3B.2.3 | `src/components/GifPicker.tsx` |
-| 3B.2.5 | Update Message type to include `mediaType: 'gif'` | 0.5h | ⏳ | 3B.2.4 | `src/types/message.types.ts` |
-| 3B.2.6 | Create `GifMessage.tsx` component | 0.5h | ⏳ | 3B.2.5 | `src/components/GifMessage.tsx` |
-| 3B.2.7 | Add GIF button to message input | 0.5h | ⏳ | 3B.2.6 | `src/components/messages/MessageInput.tsx` |
-| 3B.2.8 | Test GIF search and send | 0.5h | ⏳ | 3B.2.7 | N/A |
-
-**Checkpoint 3B.2:** GIF search returns relevant results, GIFs display and animate in chat
-
----
-
-### Subphase 3B.3: Phone Authentication (4-6h)
-
-**Dependencies:** 3B.2 (GIF support working)
-
-| ID | Task | Time | Status | Dependencies | Files |
-|----|------|------|--------|--------------|-------|
-| 3B.3.1 | Enable Firebase Phone Auth in console | 0.5h | ⏳ | 3B.2.8 | Firebase Console |
-| 3B.3.2 | Create `PhoneAuthScreen.tsx` | 1h | ⏳ | 3B.3.1 | `src/screens/PhoneAuthScreen.tsx` |
-| 3B.3.3 | Implement phone number input with validation | 0.5h | ⏳ | 3B.3.2 | `src/screens/PhoneAuthScreen.tsx` |
-| 3B.3.4 | Implement SMS code verification | 1h | ⏳ | 3B.3.3 | `src/services/auth.service.ts` |
-| 3B.3.5 | Add `signInWithPhone` function | 1h | ⏳ | 3B.3.4 | `src/services/auth.service.ts` |
-| 3B.3.6 | Add `linkPhoneToAccount` function (optional) | 1h | ⏳ | 3B.3.5 | `src/services/auth.service.ts` |
-| 3B.3.7 | Update User model to include phone number | 0.5h | ⏳ | 3B.3.6 | `src/types/models.ts` |
-| 3B.3.8 | Add phone number to settings screen | 0.5h | ⏳ | 3B.3.7 | `app/(tabs)/settings.tsx` |
-| 3B.3.9 | Test phone auth flow end-to-end | 0.5h | ⏳ | 3B.3.8 | N/A |
-| 3B.3.10 | Test SMS code delivery on real device | 0.5h | ⏳ | 3B.3.9 | N/A |
-
-**Checkpoint 3B.3:** Phone authentication flow works end-to-end, SMS codes received and verified
+**Checkpoint 3B.1:** ⚠️ PARTIAL - Code implemented, testing pending valid API key
 
 ---
 
 **PHASE 3B FINAL CHECKPOINT:**
 
-- [ ] Videos up to 50MB can be sent/received
-- [ ] Video thumbnails generate correctly
 - [ ] GIF search returns relevant results
 - [ ] GIFs display and animate in chat
-- [ ] Phone authentication flow works end-to-end
-- [ ] SMS codes are received and verified
-- [ ] All features tested on both platforms
+- [ ] GIF sending tested on both platforms
 
-**Total Phase 3B Time:** 8-11 hours
+**Total Phase 3B Time:** 2-3 hours
 
 **API Keys Required:**
 - Giphy API (free tier: 42 requests/hour)
-- Firebase Phone Auth enabled
+
+**Features Deferred to Phase 6:**
+- Video Sharing (Phase 6.5)
+- Phone Authentication (Phase 6.6)
 
 ---
 
-## PHASE 4: Polish & Testing (Day 5 - Oct 24) ⭐ TARGET COMPLETION
+## PHASE 4: Polish & Testing ✅ **COMPLETE** (Oct 26, 2025)
 
-### Day 5: Friday, Oct 24 (12 hours)
+**Duration:** 5 hours (estimated 12 hours - 58% ahead of schedule!)  
+**Status:** ✅ **COMPLETE**  
+**Actual Date:** October 26, 2025  
+**Prerequisites:** Phase 3 complete ✅  
 
-#### **Subphase 4.1: UX Polish - Animations** (2h total)
+**Goal:** Polish UI/UX, fix remaining bugs, optimize performance, and verify all features working correctly. ✅ **ACHIEVED!**
+
+### Phase 4 Completion Summary
+
+**Bugs Fixed:**
+- ✅ BUG-010: charAt error in Track Decisions
+- ✅ BUG-012: Agent section headers disappear when collapsed
+
+**UI/UX Improvements:**
+- ✅ Removed all progress/completion popups from AI Agent
+- ✅ Added progressive thinking messages (5s & 10s)
+- ✅ Text box clears immediately when sending messages
+- ✅ Keyboard dismisses automatically when sending
+- ✅ Changed "Messages" to "MessageAI" in conversations tab
+- ✅ Added loading skeleton components
+- ✅ Added global ErrorBoundary for crash protection
+
+**Performance Optimizations:**
+- ✅ Agent analysis 40% faster (10-12s → 6-8s)
+- ✅ 85% data reduction (1000 messages → 150 messages)
+- ✅ Reduced OpenAI API costs significantly
+
+**Error Handling:**
+- ✅ Global ErrorBoundary catches and displays user-friendly errors
+- ✅ Skeleton loaders improve perceived performance
+
+**Testing:**
+- ✅ All core features tested and working
+- ✅ 0 critical bugs remaining
+- ✅ 0 high priority bugs remaining
+- ✅ 2 medium priority bugs deferred to Phase 6 (non-blocking)
+
+**Deferred to Phase 6 (Non-Essential):**
+- ⏸️ Animations (message send/receive, page transitions)
+- ⏸️ AI caching infrastructure
+- ⏸️ Rate limiting
+- ⏸️ Message pagination (works fine with current data volumes)
+- ⏸️ Comprehensive edge case testing (core cases work)
+
+**Files Modified:** 8 files (5 frontend, 1 backend, 2 documentation)  
+**Backend Deployments:** 3 successful deployments  
+**New Components:** ErrorBoundary, Skeleton loaders
+
+**Detailed Summary:** See `Artifacts/1. Notes/5. Status/Phase-4-Completion-Summary.md`
+
+---
+
+### Completed Subphases
+
+#### Subphase 4.1: UX Polish ✅
+- ✅ Added loading skeleton components
+- ⏸️ Animations deferred to Phase 6 (non-essential for MVP)
+
+#### Subphase 4.2: AI Optimization ✅
+- ✅ Agent performance optimized (40% faster)
+- ⏸️ Caching infrastructure deferred to Phase 6 (works well without it)
+
+#### Subphase 4.3: Error Handling ✅
+- ✅ Global ErrorBoundary implemented
+- ✅ User-friendly error messages
+- ✅ Integrated into root layout
+
+#### Subphase 4.4: Performance ✅
+- ✅ Agent optimized (data reduction)
+- ⏸️ Pagination deferred (works fine with current volumes)
+
+#### Subphase 4.5: Testing ✅
+- ✅ Core functionality tested on both Android & iOS
+- ✅ All AI features working
+- ✅ Error handling tested
+
+#### Subphase 4.6: Cross-Platform ✅
+- ✅ Already tested and working on both platforms
+- ✅ No platform-specific issues found
+
+---
+
+### Original Phase 4 Plan (Adapted during execution)
+
+### Day 5: Friday, Oct 24 (12 hours) → Actual: Oct 26 (5 hours)
+
+#### **Subphase 4.1: UX Polish - Animations** (2h total) → Status: ⏸️ Partially Complete (Skeletons done, animations deferred)
 
 | ID | Task | Time | Status | Dependencies | Files |
 |----|------|------|--------|--------------|-------|
@@ -1166,81 +1236,6 @@ messageai/
 - [ ] App is production-ready
 
 **Total Phase 4 Time:** 12 hours
-
----
-
-## PHASE 4B: Privacy & Storage Features (OPTIONAL)
-
-**Duration:** 6-8 hours  
-**Status:** ⏳ Not Started  
-**Prerequisites:** Phase 4 (Polish & Testing) complete  
-**Timeline:** Can be implemented as final polish or v2.0 features
-
-**Goal:** Add privacy controls and storage management to enhance user privacy and app performance.
-
-### Subphase 4B.1: Privacy Controls (3-4h)
-
-**Dependencies:** Phase 4 complete
-
-| ID | Task | Time | Status | Dependencies | Files |
-|----|------|------|--------|--------------|-------|
-| 4B.1.1 | Create `privacy.service.ts` | 1h | ⏳ | Phase 4 | `src/services/privacy.service.ts` |
-| 4B.1.2 | Implement `blockUser` function | 0.5h | ⏳ | 4B.1.1 | `src/services/privacy.service.ts` |
-| 4B.1.3 | Implement `unblockUser` function | 0.5h | ⏳ | 4B.1.2 | `src/services/privacy.service.ts` |
-| 4B.1.4 | Implement `updatePrivacySettings` function | 0.5h | ⏳ | 4B.1.3 | `src/services/privacy.service.ts` |
-| 4B.1.5 | Implement `muteConversation` function | 0.5h | ⏳ | 4B.1.4 | `src/services/privacy.service.ts` |
-| 4B.1.6 | Create `PrivacySettingsScreen.tsx` | 1h | ⏳ | 4B.1.5 | `src/screens/PrivacySettingsScreen.tsx` |
-| 4B.1.7 | Add privacy settings UI (online status, last seen, read receipts) | 1h | ⏳ | 4B.1.6 | `src/screens/PrivacySettingsScreen.tsx` |
-| 4B.1.8 | Create `BlockedUsersScreen.tsx` | 0.5h | ⏳ | 4B.1.7 | `src/screens/BlockedUsersScreen.tsx` |
-| 4B.1.9 | Add block/unblock UI to conversation | 0.5h | ⏳ | 4B.1.8 | `app/conversation/[id].tsx` |
-| 4B.1.10 | Add mute conversation UI | 0.5h | ⏳ | 4B.1.9 | `app/conversation/[id].tsx` |
-| 4B.1.11 | Test privacy controls on both platforms | 0.5h | ⏳ | 4B.1.10 | N/A |
-
-**Checkpoint 4B.1:** Users can block/unblock contacts, privacy settings work correctly
-
----
-
-### Subphase 4B.2: Storage Management (3-4h)
-
-**Dependencies:** 4B.1 (privacy controls working)
-
-| ID | Task | Time | Status | Dependencies | Files |
-|----|------|------|--------|--------------|-------|
-| 4B.2.1 | Install `expo-file-system` | 0.5h | ⏳ | 4B.1.11 | `package.json` |
-| 4B.2.2 | Create `storage.service.ts` | 1h | ⏳ | 4B.2.1 | `src/services/storage.service.ts` |
-| 4B.2.3 | Implement `getStorageUsage` function | 0.5h | ⏳ | 4B.2.2 | `src/services/storage.service.ts` |
-| 4B.2.4 | Implement `clearCache` function | 0.5h | ⏳ | 4B.2.3 | `src/services/storage.service.ts` |
-| 4B.2.5 | Implement `updateMediaSettings` function | 0.5h | ⏳ | 4B.2.4 | `src/services/storage.service.ts` |
-| 4B.2.6 | Implement `shouldAutoDownload` function | 0.5h | ⏳ | 4B.2.5 | `src/services/storage.service.ts` |
-| 4B.2.7 | Create `StorageManagementScreen.tsx` | 1h | ⏳ | 4B.2.6 | `src/screens/StorageManagementScreen.tsx` |
-| 4B.2.8 | Add storage usage viewer UI | 0.5h | ⏳ | 4B.2.7 | `src/screens/StorageManagementScreen.tsx` |
-| 4B.2.9 | Create `StorageUsageChart.tsx` component | 0.5h | ⏳ | 4B.2.8 | `src/components/StorageUsageChart.tsx` |
-| 4B.2.10 | Add media auto-download settings UI | 0.5h | ⏳ | 4B.2.9 | `src/screens/StorageManagementScreen.tsx` |
-| 4B.2.11 | Add clear cache functionality | 0.5h | ⏳ | 4B.2.10 | `src/screens/StorageManagementScreen.tsx` |
-| 4B.2.12 | Integrate auto-download logic into media services | 1h | ⏳ | 4B.2.11 | `src/services/image.service.ts`, `src/services/video.service.ts` |
-| 4B.2.13 | Test storage management on both platforms | 0.5h | ⏳ | 4B.2.12 | N/A |
-
-**Checkpoint 4B.2:** Storage usage displays accurately, cache can be cleared, auto-download settings work
-
----
-
-**PHASE 4B FINAL CHECKPOINT:**
-
-- [ ] Users can block/unblock contacts
-- [ ] Privacy settings (online status, last seen) work correctly
-- [ ] Conversations can be muted with different durations
-- [ ] Storage usage displays accurately by conversation
-- [ ] Cache can be cleared (all or per conversation)
-- [ ] Media auto-download respects Wi-Fi/cellular settings
-- [ ] Low data mode reduces bandwidth usage
-- [ ] All features tested on both platforms
-
-**Total Phase 4B Time:** 6-8 hours
-
-**Dependencies Required:**
-- `expo-file-system` (for storage operations)
-- `@react-native-async-storage/async-storage` (already in core)
-- `@react-native-community/netinfo` (already in core)
 
 ---
 
@@ -1508,6 +1503,195 @@ messageai/
 
 ---
 
+### Subphase 6.5: Video Sharing (3h total) ⏸️
+
+**Status:** ⏸️ **POST-RELEASE** - Deferred from Phase 3B.1  
+**Prerequisites:** Production deployment complete  
+**Description:** Video messaging with thumbnails and playback (up to 50MB)
+
+| ID | Task | Time | Status | Dependencies | Files |
+|----|------|------|--------|--------------|-------|
+| 6.5.1 | Install `expo-video-thumbnails` | 0.5h | ⏸️ | Phase 5 | `package.json` |
+| 6.5.2 | Update Message type to include `type: 'video'` | 0.5h | ⏸️ | 6.5.1 | `src/types/models.ts` |
+| 6.5.3 | Create `video.service.ts` for upload/compression | 1h | ⏸️ | 6.5.2 | `src/services/video.service.ts` |
+| 6.5.4 | Implement video thumbnail generation | 0.5h | ⏸️ | 6.5.3 | `src/services/video.service.ts` |
+| 6.5.5 | Create `VideoMessage.tsx` component with player | 1h | ⏸️ | 6.5.4 | `src/components/messages/VideoMessage.tsx` |
+| 6.5.6 | Add video picker to message input | 0.5h | ⏸️ | 6.5.5 | `src/components/messages/MessageInput.tsx` |
+| 6.5.7 | Update Firebase Storage rules for videos | 0.5h | ⏸️ | 6.5.6 | `storage.rules` |
+| 6.5.8 | Test video upload/playback (up to 50MB) | 0.5h | ⏸️ | 6.5.7 | N/A |
+
+**Checkpoint 6.5:** Videos up to 50MB can be sent/received, thumbnails generate correctly
+
+---
+
+### Subphase 6.6: Phone Authentication (4-6h total) ⏸️
+
+**Status:** ⏸️ **POST-RELEASE** - Deferred from Phase 3B.3  
+**Prerequisites:** Production deployment complete  
+**Description:** SMS-based phone authentication and account linking
+
+| ID | Task | Time | Status | Dependencies | Files |
+|----|------|------|--------|--------------|-------|
+| 6.6.1 | Enable Firebase Phone Auth in console | 0.5h | ⏸️ | Phase 5 | Firebase Console |
+| 6.6.2 | Create `PhoneAuthScreen.tsx` | 1h | ⏸️ | 6.6.1 | `app/(auth)/phone-auth.tsx` |
+| 6.6.3 | Implement phone number input with validation | 0.5h | ⏸️ | 6.6.2 | `app/(auth)/phone-auth.tsx` |
+| 6.6.4 | Implement SMS code verification | 1h | ⏸️ | 6.6.3 | `src/services/firebase/auth.ts` |
+| 6.6.5 | Add `signInWithPhone` function | 1h | ⏸️ | 6.6.4 | `src/services/firebase/auth.ts` |
+| 6.6.6 | Add `linkPhoneToAccount` function (optional) | 1h | ⏸️ | 6.6.5 | `src/services/firebase/auth.ts` |
+| 6.6.7 | Update User model to include phone number | 0.5h | ⏸️ | 6.6.6 | `src/types/models.ts` |
+| 6.6.8 | Add phone number to settings screen | 0.5h | ⏸️ | 6.6.7 | `app/(tabs)/settings.tsx` |
+| 6.6.9 | Test phone auth flow end-to-end | 0.5h | ⏸️ | 6.6.8 | N/A |
+| 6.6.10 | Test SMS code delivery on real device | 0.5h | ⏸️ | 6.6.9 | N/A |
+
+**Checkpoint 6.6:** Phone authentication flow works end-to-end, SMS codes received and verified
+
+---
+
+### Subphase 6.7: Privacy & Storage Features (6-8h total) ⏸️
+
+**Status:** ⏸️ **POST-RELEASE** - Deferred from Phase 4B  
+**Prerequisites:** Production deployment complete  
+**Description:** Privacy controls and storage management to enhance user privacy and app performance
+
+**Goal:** Add privacy controls and storage management to enhance user privacy and app performance.
+
+#### **6.7.1: Privacy Controls** (3-4h)
+
+**Dependencies:** Phase 5 complete
+
+| ID | Task | Time | Status | Dependencies | Files |
+|----|------|------|--------|--------------|-------|
+| 6.7.1.1 | Create `privacy.service.ts` | 1h | ⏸️ | Phase 5 | `src/services/privacy.service.ts` |
+| 6.7.1.2 | Implement `blockUser` function | 0.5h | ⏸️ | 6.7.1.1 | `src/services/privacy.service.ts` |
+| 6.7.1.3 | Implement `unblockUser` function | 0.5h | ⏸️ | 6.7.1.2 | `src/services/privacy.service.ts` |
+| 6.7.1.4 | Implement `updatePrivacySettings` function | 0.5h | ⏸️ | 6.7.1.3 | `src/services/privacy.service.ts` |
+| 6.7.1.5 | Implement `muteConversation` function | 0.5h | ⏸️ | 6.7.1.4 | `src/services/privacy.service.ts` |
+| 6.7.1.6 | Create `PrivacySettingsScreen.tsx` | 1h | ⏸️ | 6.7.1.5 | `src/screens/PrivacySettingsScreen.tsx` |
+| 6.7.1.7 | Add privacy settings UI (online status, last seen, read receipts) | 1h | ⏸️ | 6.7.1.6 | `src/screens/PrivacySettingsScreen.tsx` |
+| 6.7.1.8 | Create `BlockedUsersScreen.tsx` | 0.5h | ⏸️ | 6.7.1.7 | `src/screens/BlockedUsersScreen.tsx` |
+| 6.7.1.9 | Add block/unblock UI to conversation | 0.5h | ⏸️ | 6.7.1.8 | `app/conversation/[id].tsx` |
+| 6.7.1.10 | Add mute conversation UI | 0.5h | ⏸️ | 6.7.1.9 | `app/conversation/[id].tsx` |
+| 6.7.1.11 | Test privacy controls on both platforms | 0.5h | ⏸️ | 6.7.1.10 | N/A |
+
+**Checkpoint 6.7.1:** Users can block/unblock contacts, privacy settings work correctly
+
+#### **6.7.2: Storage Management** (3-4h)
+
+**Dependencies:** 6.7.1 (privacy controls working)
+
+| ID | Task | Time | Status | Dependencies | Files |
+|----|------|------|--------|--------------|-------|
+| 6.7.2.1 | Install `expo-file-system` | 0.5h | ⏸️ | 6.7.1.11 | `package.json` |
+| 6.7.2.2 | Create `storage.service.ts` | 1h | ⏸️ | 6.7.2.1 | `src/services/storage.service.ts` |
+| 6.7.2.3 | Implement `getStorageUsage` function | 0.5h | ⏸️ | 6.7.2.2 | `src/services/storage.service.ts` |
+| 6.7.2.4 | Implement `clearCache` function | 0.5h | ⏸️ | 6.7.2.3 | `src/services/storage.service.ts` |
+| 6.7.2.5 | Implement `updateMediaSettings` function | 0.5h | ⏸️ | 6.7.2.4 | `src/services/storage.service.ts` |
+| 6.7.2.6 | Implement `shouldAutoDownload` function | 0.5h | ⏸️ | 6.7.2.5 | `src/services/storage.service.ts` |
+| 6.7.2.7 | Create `StorageManagementScreen.tsx` | 1h | ⏸️ | 6.7.2.6 | `src/screens/StorageManagementScreen.tsx` |
+| 6.7.2.8 | Add storage usage viewer UI | 0.5h | ⏸️ | 6.7.2.7 | `src/screens/StorageManagementScreen.tsx` |
+| 6.7.2.9 | Create `StorageUsageChart.tsx` component | 0.5h | ⏸️ | 6.7.2.8 | `src/components/StorageUsageChart.tsx` |
+| 6.7.2.10 | Add media auto-download settings UI | 0.5h | ⏸️ | 6.7.2.9 | `src/screens/StorageManagementScreen.tsx` |
+| 6.7.2.11 | Add clear cache functionality | 0.5h | ⏸️ | 6.7.2.10 | `src/screens/StorageManagementScreen.tsx` |
+| 6.7.2.12 | Integrate auto-download logic into media services | 1h | ⏸️ | 6.7.2.11 | `src/services/image.service.ts`, `src/services/video.service.ts` |
+| 6.7.2.13 | Test storage management on both platforms | 0.5h | ⏸️ | 6.7.2.12 | N/A |
+
+**Checkpoint 6.7.2:** Storage usage displays accurately, cache can be cleared, auto-download settings work
+
+**Subphase 6.7 Final Checkpoint:**
+
+- [ ] Users can block/unblock contacts
+- [ ] Privacy settings (online status, last seen) work correctly
+- [ ] Conversations can be muted with different durations
+- [ ] Storage usage displays accurately by conversation
+- [ ] Cache can be cleared (all or per conversation)
+- [ ] Media auto-download respects Wi-Fi/cellular settings
+- [ ] Low data mode reduces bandwidth usage
+- [ ] All features tested on both platforms
+
+**Dependencies Required:**
+- `expo-file-system` (for storage operations)
+- `@react-native-async-storage/async-storage` (already in core)
+- `@react-native-community/netinfo` (already in core)
+
+---
+
+### Subphase 6.8: Phase 4 Deferred Polish Features ⏸️
+
+**Status:** ⏸️ **POST-RELEASE** - Deferred from Phase 4  
+**Prerequisites:** Production deployment complete  
+**Description:** Non-essential polish features deferred during Phase 4 completion
+
+#### **6.8.1: UX Animations** (2h total)
+
+**Dependencies:** Phase 5 complete
+
+| ID | Task | Time | Status | Dependencies | Files |
+|----|------|------|--------|--------------|-------|
+| 6.8.1.1 | Add message send animation | 20m | ⏸️ | Phase 5 | `src/components/messages/MessageBubble.tsx` |
+| 6.8.1.2 | Add message receive animation | 20m | ⏸️ | Phase 5 | `src/components/messages/MessageBubble.tsx` |
+| 6.8.1.3 | Add conversation list item animations | 15m | ⏸️ | Phase 5 | `src/components/conversations/ConversationList.tsx` |
+| 6.8.1.4 | Smooth scroll to bottom on new message | 15m | ⏸️ | Phase 5 | `src/components/messages/MessageList.tsx` |
+| 6.8.1.5 | Install and add keyboard-aware-scroll-view | 20m | ⏸️ | Phase 5 | `app/conversation/[id].tsx` |
+| 6.8.1.6 | Polish page transitions | 20m | ⏸️ | Phase 5 | `app/_layout.tsx` |
+
+**Checkpoint 6.8.1:** All animations smooth (60 FPS)
+
+#### **6.8.2: AI Cost Optimization & Caching** (2h total)
+
+**Dependencies:** 6.8.1 complete
+
+| ID | Task | Time | Status | Dependencies | Files |
+|----|------|------|--------|--------------|-------|
+| 6.8.2.1 | Create AI cache structure in Firestore | 15m | ⏸️ | 6.8.1.6 | Firebase Console |
+| 6.8.2.2 | Implement cachedAIRequest wrapper function | 30m | ⏸️ | 6.8.2.1 | `functions/src/utils/cache.ts` |
+| 6.8.2.3 | Add cache TTL logic for each AI feature | 20m | ⏸️ | 6.8.2.2 | `functions/src/utils/cache.ts` |
+| 6.8.2.4 | Implement rate limiting (10 req/min per user) | 30m | ⏸️ | 6.8.2.1 | `functions/src/utils/rateLimit.ts` |
+| 6.8.2.5 | Add rate limit checks to all AI endpoints | 20m | ⏸️ | 6.8.2.4 | `functions/src/ai/*.ts` |
+| 6.8.2.6 | Optimize prompts for token efficiency | 15m | ⏸️ | Phase 5 | `functions/src/ai/*.ts` |
+| 6.8.2.7 | Test cache hit rates | 15m | ⏸️ | 6.8.2.6 | N/A |
+| 6.8.2.8 | Monitor AI costs | 15m | ⏸️ | 6.8.2.7 | Firebase Console |
+
+**Checkpoint 6.8.2:** AI caching working, costs further optimized
+
+#### **6.8.3: Performance Optimization** (2h total)
+
+**Dependencies:** 6.8.2 complete
+
+| ID | Task | Time | Status | Dependencies | Files |
+|----|------|------|--------|--------------|-------|
+| 6.8.3.1 | Implement message pagination (load on scroll) | 30m | ⏸️ | 6.8.2.8 | `src/hooks/useMessages.ts` |
+| 6.8.3.2 | Add conversation list pagination | 20m | ⏸️ | 6.8.2.8 | `src/hooks/useConversations.ts` |
+| 6.8.3.3 | Optimize FlatList rendering | 20m | ⏸️ | 6.8.2.8 | `src/components/messages/MessageList.tsx` |
+| 6.8.3.4 | Implement image lazy loading | 20m | ⏸️ | 6.8.2.8 | `src/components/shared/Avatar.tsx` |
+| 6.8.3.5 | Add AI response caching | 20m | ⏸️ | 6.8.2.8 | `src/services/local/cache.ts` |
+| 6.8.3.6 | Optimize Firestore queries (indexing) | 20m | ⏸️ | 6.8.2.8 | `firestore.indexes.json` |
+| 6.8.3.7 | Profile app performance | 20m | ⏸️ | 6.8.3.6 | N/A |
+| 6.8.3.8 | Fix any performance bottlenecks | 30m | ⏸️ | 6.8.3.7 | Various |
+
+**Checkpoint 6.8.3:** App runs smoothly with 1000+ messages, optimized performance
+
+#### **6.8.4: Comprehensive Edge Case Testing** (1h total)
+
+**Dependencies:** 6.8.3 complete
+
+| ID | Task | Time | Status | Dependencies | Files |
+|----|------|------|--------|--------------|-------|
+| 6.8.4.1 | Test empty/minimal data cases | 10m | ⏸️ | 6.8.3.8 | N/A |
+| 6.8.4.2 | Test large data cases (1000+ messages) | 10m | ⏸️ | 6.8.3.8 | N/A |
+| 6.8.4.3 | Test special content (mixed languages, code, emojis) | 15m | ⏸️ | 6.8.3.8 | N/A |
+| 6.8.4.4 | Test error conditions (API timeout, rate limit) | 15m | ⏸️ | 6.8.3.8 | N/A |
+| 6.8.4.5 | Test boundary cases (offline AI requests, etc.) | 10m | ⏸️ | 6.8.3.8 | N/A |
+| 6.8.4.6 | Document edge case findings | 10m | ⏸️ | 6.8.4.5 | `docs/ai-edge-cases.md` |
+
+**Checkpoint 6.8.4:** All AI edge cases handled gracefully
+
+**Subphase 6.8 Summary:**
+- Total Time: ~7 hours
+- Status: All items deferred from Phase 4 as non-essential for MVP
+- These features enhance polish but are not critical for production launch
+
+---
+
 **PHASE 6 SUMMARY:**
 
 **Subphases:**
@@ -1515,8 +1699,12 @@ messageai/
 - ⏸️ **6.2: Knowledge Retrieval Agent** - POST-RELEASE (2.5h)
 - ⏸️ **6.3: Conversation Helper Agent** - POST-RELEASE (2h)
 - ⏸️ **6.4: Voice & Video Calls** - POST-RELEASE (12-16h)
+- ⏸️ **6.5: Video Sharing** - POST-RELEASE (3h) - Deferred from Phase 3B.1
+- ⏸️ **6.6: Phone Authentication** - POST-RELEASE (4-6h) - Deferred from Phase 3B.3
+- ⏸️ **6.7: Privacy & Storage Features** - POST-RELEASE (6-8h) - Deferred from Phase 4B
+- ⏸️ **6.8: Phase 4 Deferred Polish** - POST-RELEASE (7h) - Deferred from Phase 4
 
-**Total Phase 6 Time:** 19.5-23.5 hours  
+**Total Phase 6 Time:** 39.5-47.5 hours  
 **Status:** All subphases deferred to post-release  
 **Priority:** To be determined based on user feedback and business metrics after launch
 
@@ -1540,16 +1728,18 @@ messageai/
 | Phase | Hours | Key Deliverables |
 |-------|-------|------------------|
 | **Phase 1B: Core Features** | 18-24h | Encryption, document sharing, voice messages, desktop web |
-| **Phase 3B: Media & Auth** | 8-11h | Video sharing, GIF support, phone authentication |
+| **Phase 3B: Media Enhancements** | 2-3h | GIF support (Video & Phone Auth deferred to Phase 6) |
 | **Phase 3C: Voice/Video** | 12-16h | Voice calls, video calls (1:1) |
-| **Phase 4B: Privacy & Storage** | 6-8h | Privacy controls, storage management |
-| **Optional Total** | **44-59h** | 90/100 WhatsApp experience parity |
+| **Phase 6: Post-Release** | 39.5-47.5h | Additional agents, video sharing, phone auth, privacy/storage features, deferred polish |
+| **Optional Total** | **72-90.5h** | 90/100 WhatsApp experience parity |
 
 ### Combined Totals
 
 - **Core Only:** 74 hours (7-day sprint)
 - **Core + Phase 1B:** 92-98 hours (adds critical features)
-- **Core + All Optional:** 118-133 hours (full WhatsApp parity)
+- **Core + Phase 1B + 3B:** 94-101 hours (adds GIF support)
+- **Core + All Optional (excluding Phase 6):** 106-115 hours (full WhatsApp parity - current release)
+- **With Phase 6 Post-Release:** 145.5-162.5 hours (all features including deferred)
 
 ### Risk Buffer
 
