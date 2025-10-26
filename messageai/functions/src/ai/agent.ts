@@ -127,11 +127,13 @@ export const getPriorityMessages = functions.https.onCall(async (data, context) 
       limit,
     });
 
-    // Step 1: Get user's conversation IDs
+    // Step 1: Get user's last 10 conversation IDs (most recent first)
     const conversationsSnapshot = await admin
       .firestore()
       .collection('conversations')
       .where('participantIds', 'array-contains', userId)
+      .orderBy('lastMessageAt', 'desc') // Order by most recent first
+      .limit(10) // Only check last 10 conversations for performance
       .get();
 
     if (conversationsSnapshot.empty) {
@@ -151,6 +153,10 @@ export const getPriorityMessages = functions.https.onCall(async (data, context) 
         name: data.name || 'Direct Chat',
         participants: data.participantNames || [],
       });
+    });
+    
+    functions.logger.info('🟡 Fetched last 10 conversations for priorities', {
+      count: conversationIds.length,
     });
 
     // Step 2: Query messages with priority (batch by conversationIds - max 10 per query)
@@ -276,12 +282,13 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
     const conversationMap = new Map<string, string>();
 
     if (targetConversationIds.length === 0) {
-      // Get all user conversations
+      // Get user's last 10 conversations ordered by most recent message
       const conversationsSnapshot = await admin
         .firestore()
         .collection('conversations')
         .where('participantIds', 'array-contains', userId)
-        .limit(20) // Limit to prevent overwhelming queries
+        .orderBy('lastMessageAt', 'desc') // Order by most recent first
+        .limit(10) // Only check last 10 conversations for performance
         .get();
 
       targetConversationIds = conversationsSnapshot.docs.map((doc) => doc.id);
@@ -289,6 +296,11 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
       conversationsSnapshot.forEach((doc) => {
         const data = doc.data();
         conversationMap.set(doc.id, data.name || 'Direct Chat');
+      });
+      
+      functions.logger.info('🟡 Fetched last 10 conversations', {
+        count: targetConversationIds.length,
+        conversationIds: targetConversationIds,
       });
     } else {
       // Verify user has access to specified conversations
