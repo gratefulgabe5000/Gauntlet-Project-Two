@@ -66,6 +66,8 @@ interface ChatMessage {
 }
 
 const AI_MESSAGES_KEY = '@ai_messages';
+const AI_MESSAGES_VERSION = '@ai_messages_version';
+const CURRENT_VERSION = '1.1'; // Increment to clear old cached messages
 
 export default function AIAssistant() {
   const params = useLocalSearchParams();
@@ -284,20 +286,15 @@ export default function AIAssistant() {
     }
   }, [params.requestDecisions, params.conversationId]);
 
-  // Auto-scroll to bottom when new messages arrive OR when tab is first opened
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
-    if (messages.length > 0) {
-      // Scroll to bottom whenever a new message is added or on initial load
-      // Use longer timeout to ensure content is rendered first, then scroll twice to ensure we get all the way down
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: false });
-        // Second scroll after another delay to ensure we're at the absolute bottom
-        setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-      }, 300);
-    }
-  }, [messages]); // Trigger when messages array changes (including content changes)
+    // Simple, single scroll after a reasonable delay for rendering
+    const timer = setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [messages]);
 
   // Save messages to AsyncStorage
   useEffect(() => {
@@ -308,6 +305,17 @@ export default function AIAssistant() {
 
   const loadMessages = async () => {
     try {
+      // Check version first
+      const storedVersion = await AsyncStorage.getItem(AI_MESSAGES_VERSION);
+      
+      // If version doesn't match, clear old messages
+      if (storedVersion !== CURRENT_VERSION) {
+        console.log('[AI Assistant] Version mismatch, clearing old messages');
+        await AsyncStorage.removeItem(AI_MESSAGES_KEY);
+        await AsyncStorage.setItem(AI_MESSAGES_VERSION, CURRENT_VERSION);
+        return; // Use default welcome message
+      }
+      
       const stored = await AsyncStorage.getItem(AI_MESSAGES_KEY);
       if (stored) {
         const parsedMessages = JSON.parse(stored).map((msg: any) => ({
@@ -806,17 +814,6 @@ export default function AIAssistant() {
             </Text>
           </TouchableOpacity>
         </View>
-        
-        {/* Migration Button (Phase 3.3: Pinecone RAG) */}
-        <TouchableOpacity
-          style={styles.migrationButton}
-          onPress={handleMigrateToPinecone}
-          disabled={isLoading}
-        >
-          <Text style={styles.migrationButtonText}>
-            📦 Index Existing Messages to Pinecone
-          </Text>
-        </TouchableOpacity>
       </View>
 
       {/* Back to Chat Button (when showing search results) */}
