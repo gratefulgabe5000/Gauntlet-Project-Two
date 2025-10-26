@@ -514,14 +514,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
     flexDirection: 'row',
-    alignItems: 'flex-start', // Changed from 'center' to allow multi-line content
+    alignItems: 'center', // Changed back to center for better alignment
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
     maxWidth: '100%', // Prevent cards from overflowing
-    minHeight: 60, // Ensure cards have minimum height for content
   },
   priorityCard: {
     borderLeftWidth: 4,
@@ -556,7 +555,7 @@ const styles = StyleSheet.create({
   },
   itemContent: {
     flex: 1,
-    paddingRight: 60, // Space for priority badge
+    paddingRight: 8, // Reduced from 60 - priority badge overlaps anyway
     maxWidth: '100%', // Ensure content doesn't overflow
   },
   itemTitle: {
@@ -564,12 +563,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#111827',
     marginBottom: 4,
-    flexWrap: 'wrap', // Allow title to wrap to multiple lines
   },
   itemLocation: {
     fontSize: 13,
     color: '#6B7280',
-    flexWrap: 'wrap', // Allow location to wrap
   },
   navigateIcon: {
     width: 28,
@@ -592,7 +589,6 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: '#F59E0B',
     maxWidth: '100%', // Prevent overflow
-    minHeight: 40, // Allow for multi-line text
   },
   noteText: {
     fontSize: 12,

@@ -284,20 +284,15 @@ export default function AIAssistant() {
     }
   }, [params.requestDecisions, params.conversationId]);
 
-  // Auto-scroll to bottom when new messages arrive (but only for new messages, not scrolling)
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (messages.length > 0) {
-      // Only scroll if it's a fresh message (just added)
-      const lastMessage = messages[messages.length - 1];
-      const isRecent = Date.now() - new Date(lastMessage.timestamp).getTime() < 1000; // Within 1 second
-      
-      if (isRecent) {
-        setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-      }
+      // Scroll to bottom whenever a new message is added
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     }
-  }, [messages.length]); // Only trigger when message count changes
+  }, [messages.length]); // Trigger when message count changes
 
   // Save messages to AsyncStorage
   useEffect(() => {
@@ -769,8 +764,8 @@ export default function AIAssistant() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={100}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       <StatusBar style="dark" />
 
