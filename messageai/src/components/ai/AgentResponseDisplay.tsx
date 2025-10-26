@@ -165,10 +165,12 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
         title = title.replace(/\[[^\]]+\]/g, '').trim();
         title = title.replace(/\([A-Za-z0-9]{15,}\)/g, '').trim();
         title = title.replace(/[-–]\s*Assigned to:[^,\-]+(,|\s|$)/gi, '').trim();
-        title = title.replace(/[-–]\s*Deadline:\s*\d{4}-\d{2}-\d{2}/gi, '').trim();
-        title = title.replace(/[-–]\s*by\s+\d{4}-\d{2}-\d{2}/gi, '').trim();
+        title = title.replace(/[-–]?\s*Deadline:\s*\d{4}-\d{2}-\d{2}/gi, '').trim();
+        title = title.replace(/[-–]?\s*by\s+\d{4}-\d{2}-\d{2}/gi, '').trim();
         title = title.replace(/[-–]\s*Context:\s*"[^"]+"/gi, '').trim();
         title = title.replace(/"[^"]{10,}"/g, '').trim(); // Remove long quoted context
+        title = title.replace(/T\d{2}:\d{2}:\d{2}\.\d{3}Z/g, '').trim(); // Remove ISO timestamp garbage
+        title = title.replace(/\s+T\d{2}:\d{2}:\d{2}\.\d{3}Z/g, '').trim(); // With space before
         title = title.replace(/^[-–\s]+/, '').replace(/[-–\s]+$/, '').trim();
         title = title.replace(/\[Context\]\([^)]+\)/, '').trim();
         
@@ -281,10 +283,11 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
         // THIRD: Clean up title - remove EVERYTHING we extracted and priority labels
         title = restOfLine;
         // Remove priority indicators (both in parentheses and as prefixes)
-        title = title.replace(/\(Urgent\)/gi, '').trim();
+        title = title.replace(/\(Urgent Priority\)/gi, '').trim();
         title = title.replace(/\(High Priority\)/gi, '').trim();
         title = title.replace(/\(Medium Priority\)/gi, '').trim();
         title = title.replace(/\(Low Priority\)/gi, '').trim();
+        title = title.replace(/\(Urgent\)/gi, '').trim();
         title = title.replace(/^(Urgent|Important|High|Medium|Low):\s*/i, '').trim();
         // Remove location brackets
         title = title.replace(/\[[^\]]+\]/g, '').trim();
@@ -391,13 +394,6 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
     if (actionItems.length > 0) {
       return (
         <View style={styles.container}>
-          {/* Summary */}
-          {summaryText && (
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryText}>{summaryText}</Text>
-            </View>
-          )}
-
           {/* Action Items Header */}
           <TouchableOpacity 
             style={styles.sectionHeader}
@@ -449,27 +445,10 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
                       </Text>
                     </View>
                   </View>
-
-                  {/* Context Quote - embedded message */}
-                  {item.context && (
-                    <View style={styles.contextContainer}>
-                      <Text style={styles.contextIcon}>💬</Text>
-                      <Text style={styles.contextText} numberOfLines={2}>
-                        "{item.context}"
-                      </Text>
-                    </View>
-                  )}
                 </TouchableOpacity>
               ))}
             </View>
           )}
-
-          {/* Note */}
-          <View style={styles.noteCard}>
-            <Text style={styles.noteText}>
-              💡 Tap any item to jump to the conversation
-            </Text>
-          </View>
         </View>
       );
     }
@@ -499,13 +478,6 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
     if (priorityMessages.length > 0) {
       return (
         <View style={styles.container}>
-          {/* Summary */}
-          {summaryText && (
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryText}>{summaryText}</Text>
-            </View>
-          )}
-
           {/* Priority Messages Header */}
           <TouchableOpacity 
             style={styles.sectionHeader}
@@ -551,13 +523,6 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
               ))}
             </View>
           )}
-
-          {/* Note */}
-          <View style={styles.noteCard}>
-            <Text style={styles.noteText}>
-              💡 Tap any message to jump to the conversation
-            </Text>
-          </View>
         </View>
       );
     }
