@@ -54,9 +54,9 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
     new Set([`main-${instanceId}`, `items-${instanceId}`, `priorities-${instanceId}`])
   );
 
-  // Check if response is action items or priorities
-  const isActionItems = /action items?:/i.test(content) || /here are your action items/i.test(content);
-  const isPriorities = /priorities/i.test(content) || /priority messages/i.test(content) || /current priorities/i.test(content);
+  // Check if response is action items or priorities - VERY flexible detection
+  const isActionItems = /action\s*items?/i.test(content) || /\bactions?\b/i.test(content);
+  const isPriorities = /priorit/i.test(content) || /important/i.test(content) || /urgent/i.test(content);
 
   const toggleSection = (section: string) => {
     const sectionKey = `${section}-${instanceId}`;

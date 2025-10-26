@@ -288,11 +288,12 @@ export default function AIAssistant() {
   useEffect(() => {
     if (messages.length > 0) {
       // Scroll to bottom whenever a new message is added
+      // Use longer timeout to ensure content is rendered first
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      }, 300);
     }
-  }, [messages.length]); // Trigger when message count changes
+  }, [messages]); // Trigger when messages array changes (including content changes)
 
   // Save messages to AsyncStorage
   useEffect(() => {
