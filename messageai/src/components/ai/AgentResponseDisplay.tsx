@@ -166,6 +166,7 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
         title = title.replace(/\([A-Za-z0-9]{15,}\)/g, '').trim();
         title = title.replace(/[-–]\s*Assigned to:[^,\-]+(,|\s|$)/gi, '').trim();
         title = title.replace(/[-–]?\s*Deadline:\s*\d{4}-\d{2}-\d{2}/gi, '').trim();
+        title = title.replace(/[-–]?\s*Deadline:\s*unspecified/gi, '').trim(); // Remove "Deadline: unspecified"
         title = title.replace(/[-–]?\s*by\s+\d{4}-\d{2}-\d{2}/gi, '').trim();
         title = title.replace(/[-–]\s*Context:\s*"[^"]+"/gi, '').trim();
         title = title.replace(/"[^"]{10,}"/g, '').trim(); // Remove long quoted context
@@ -441,21 +442,21 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
                   {/* Task Title - prominent like ActionItemsList */}
                   <Text style={styles.taskText}>{item.title}</Text>
 
-                  {/* Metadata Row - assignee, deadline, and priority */}
+                  {/* Metadata Row - deadline, assignee, and priority */}
                   <View style={styles.metadataRow}>
-                    {/* Assignee */}
-                    {item.assignee && (
-                      <View style={styles.metadataItem}>
-                        <Text style={styles.metadataIcon}>👤</Text>
-                        <Text style={styles.metadataText}>{item.assignee}</Text>
-                      </View>
-                    )}
-
                     {/* Deadline */}
                     {item.deadline && (
                       <View style={styles.metadataItem}>
                         <Text style={styles.metadataIcon}>📅</Text>
                         <Text style={styles.metadataText}>{item.deadline}</Text>
+                      </View>
+                    )}
+
+                    {/* Assignee */}
+                    {item.assignee && (
+                      <View style={styles.metadataItem}>
+                        <Text style={styles.metadataIcon}>👤</Text>
+                        <Text style={styles.metadataText}>{item.assignee}</Text>
                       </View>
                     )}
 
