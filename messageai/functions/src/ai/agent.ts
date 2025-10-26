@@ -1067,6 +1067,13 @@ Guidelines:
 - Cite specific conversations, messages, or people when relevant
 - If no results are found, say so clearly
 - Don't call the same tool twice with the same parameters
+
+CRITICAL FORMATTING RULES (for action items and priority messages):
+- Format results as a numbered list: "1. Task description"
+- After each item, include the conversation source in brackets: [ConversationName]
+- Immediately after the brackets, include the conversationId in parentheses: (conversationId)
+- Example: "1. Review quarterly report [Team Meeting] (abc123xyz)"
+- Always include priority level in parentheses before the brackets: (High Priority) or (Medium Priority) or (Low Priority)
 - After gathering information from tools, provide a synthesized answer
 
 Answer the user's question using the available tools.`;

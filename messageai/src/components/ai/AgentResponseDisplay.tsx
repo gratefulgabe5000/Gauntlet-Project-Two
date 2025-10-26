@@ -103,20 +103,35 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
           title = restOfLine.replace(/\([A-Za-z]+\s+[Pp]riority\)/, '').trim();
         }
         
-        // Try to extract location from brackets: [Direct Chat]
-        const locationMatch = restOfLine.match(/\[([^\]]+)\]/);
-        if (locationMatch) {
-          location = locationMatch[1];
-          // Remove location from title
-          title = title.replace(/\[[^\]]+\]/, '').trim();
+      // Try to extract location from brackets: [Direct Chat]
+      const locationMatch = restOfLine.match(/\[([^\]]+)\]/);
+      if (locationMatch) {
+        location = locationMatch[1];
+        // Remove location from title
+        title = title.replace(/\[[^\]]+\]/, '').trim();
+      }
+      
+      // Try to extract conversationId from (id) pattern that comes RIGHT AFTER location brackets
+      // Pattern: [Location] (conversationId) or just (conversationId) anywhere
+      const idMatch = restOfLine.match(/\]\s*\(([^)]+)\)/);  // After brackets
+      if (idMatch) {
+        conversationId = idMatch[1];
+        title = title.replace(/\([^)]+\)/, '').trim();
+      } else {
+        // Fallback: try to find any (id-looking) pattern with hyphens or long alphanumeric
+        const fallbackIdMatch = restOfLine.match(/\(([a-zA-Z0-9]{15,})\)/);
+        if (fallbackIdMatch) {
+          conversationId = fallbackIdMatch[1];
+          title = title.replace(/\([a-zA-Z0-9]{15,}\)/, '').trim();
         }
-        
-        // Try to extract conversationId from [Context](id) pattern
-        const contextMatch = restOfLine.match(/\[Context\]\(([^)]+)\)/);
-        if (contextMatch) {
-          conversationId = contextMatch[1];
-          title = title.replace(/\[Context\]\([^)]+\)/, '').trim();
-        }
+      }
+      
+      // Remove the old [Context](id) pattern if present
+      const contextMatch = restOfLine.match(/\[Context\]\(([^)]+)\)/);
+      if (contextMatch && !conversationId) {
+        conversationId = contextMatch[1];
+        title = title.replace(/\[Context\]\([^)]+\)/, '').trim();
+      }
         
         // Extract priority from keywords in the text
         if (priority === 'Unspecified') {
@@ -172,34 +187,62 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
         let title = restOfLine;
         let priority = 'High';
         let location = 'Direct Chat';
+        let conversationId: string | undefined;
         
         // Remove quotes if present
         title = title.replace(/^["'](.+?)["']/, '$1');
         
-        // Try to extract location from patterns like "from the conversation X" or "in the X conversation"
-        const locationMatch1 = restOfLine.match(/from (?:the )?(.+?)\s+conversation/i);
-        const locationMatch2 = restOfLine.match(/in (?:the )?(.+?)\s+conversation/i);
-        if (locationMatch1) {
-          location = locationMatch1[1].trim();
-          // Clean up location from title
-          title = title.split(/\s+from\s+(?:the\s+)?/i)[0].trim();
-        } else if (locationMatch2) {
-          location = locationMatch2[1].trim();
-          title = title.split(/\s+in\s+(?:the\s+)?/i)[0].trim();
+        // Try to extract location from brackets: [Direct Chat]
+        const locationMatch = restOfLine.match(/\[([^\]]+)\]/);
+        if (locationMatch) {
+          location = locationMatch[1];
+          title = title.replace(/\[[^\]]+\]/, '').trim();
+        } else {
+          // Fallback: Try to extract location from patterns like "from the conversation X"
+          const locationMatch1 = restOfLine.match(/from (?:the )?(.+?)\s+conversation/i);
+          const locationMatch2 = restOfLine.match(/in (?:the )?(.+?)\s+conversation/i);
+          if (locationMatch1) {
+            location = locationMatch1[1].trim();
+            title = title.split(/\s+from\s+(?:the\s+)?/i)[0].trim();
+          } else if (locationMatch2) {
+            location = locationMatch2[1].trim();
+            title = title.split(/\s+in\s+(?:the\s+)?/i)[0].trim();
+          }
         }
         
-        // Extract priority from the text
-        if (/\bUrgent\b/i.test(restOfLine)) {
-          priority = 'Urgent';
-        } else if (/\bHigh\b/i.test(restOfLine)) {
-          priority = 'High';
+        // Try to extract conversationId from (id) pattern that comes RIGHT AFTER location brackets
+        const idMatch = restOfLine.match(/\]\s*\(([^)]+)\)/);
+        if (idMatch) {
+          conversationId = idMatch[1];
+          title = title.replace(/\([^)]+\)/, '').trim();
+        } else {
+          // Fallback: try to find any (id-looking) pattern with hyphens or long alphanumeric
+          const fallbackIdMatch = restOfLine.match(/\(([a-zA-Z0-9]{15,})\)/);
+          if (fallbackIdMatch) {
+            conversationId = fallbackIdMatch[1];
+            title = title.replace(/\([a-zA-Z0-9]{15,}\)/, '').trim();
+          }
         }
         
-        // If title starts with Urgent: or High:, extract it
-        const priorityPrefixMatch = title.match(/^(Urgent|High):\s*(.+)/i);
-        if (priorityPrefixMatch) {
-          priority = priorityPrefixMatch[1].charAt(0).toUpperCase() + priorityPrefixMatch[1].slice(1).toLowerCase();
-          title = priorityPrefixMatch[2];
+        // Try to extract priority from parentheses: (High Priority)
+        const priorityMatch = restOfLine.match(/\(([A-Za-z]+)\s+[Pp]riority\)/);
+        if (priorityMatch) {
+          priority = priorityMatch[1].charAt(0).toUpperCase() + priorityMatch[1].slice(1).toLowerCase();
+          title = title.replace(/\([A-Za-z]+\s+[Pp]riority\)/, '').trim();
+        } else {
+          // Extract priority from the text
+          if (/\bUrgent\b/i.test(restOfLine)) {
+            priority = 'Urgent';
+          } else if (/\bHigh\b/i.test(restOfLine)) {
+            priority = 'High';
+          }
+          
+          // If title starts with Urgent: or High:, extract it
+          const priorityPrefixMatch = title.match(/^(Urgent|High):\s*(.+)/i);
+          if (priorityPrefixMatch) {
+            priority = priorityPrefixMatch[1].charAt(0).toUpperCase() + priorityPrefixMatch[1].slice(1).toLowerCase();
+            title = priorityPrefixMatch[2];
+          }
         }
         
         // Clean up title
@@ -218,7 +261,7 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
           title: title,
           priority: priority as any,
           location: location,
-          conversationId: undefined,
+          conversationId: conversationId,
           fullText: line,
         });
       }
