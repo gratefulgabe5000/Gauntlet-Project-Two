@@ -373,17 +373,38 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
   // Render Action Items
   if (isActionItems) {
     const actionItems = parseActionItems();
+    
+    // Sort action items: by deadline (earliest first), then by priority within same deadline
+    const sortedActionItems = actionItems.sort((a, b) => {
+      // Items with deadlines come before unspecified
+      const aHasDeadline = a.deadline && a.deadline !== 'unspecified';
+      const bHasDeadline = b.deadline && b.deadline !== 'unspecified';
+      
+      if (aHasDeadline && !bHasDeadline) return -1;
+      if (!aHasDeadline && bHasDeadline) return 1;
+      
+      // Both have deadlines - sort by date
+      if (aHasDeadline && bHasDeadline) {
+        const dateCompare = a.deadline!.localeCompare(b.deadline!);
+        if (dateCompare !== 0) return dateCompare;
+      }
+      
+      // Same deadline (or both unspecified) - sort by priority
+      const priorityOrder = { 'High': 0, 'Medium': 1, 'Low': 2, 'Unspecified': 3 };
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    });
+    
     const summaryText = getSummaryText();
     
     // Debug: Log what we're trying to parse
     console.log('🔍 AgentResponseDisplay - Action Items Mode:', {
       contentPreview: content.substring(0, 200),
-      parsedCount: actionItems.length,
+      parsedCount: sortedActionItems.length,
       isActionItems,
     });
     
     // If no action items found, show the full text as a simple message
-    if (actionItems.length === 0) {
+    if (sortedActionItems.length === 0) {
       return (
         <View style={styles.container}>
           <Text style={styles.fallbackText}>{content}</Text>
@@ -391,7 +412,7 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
       );
     }
     
-    if (actionItems.length > 0) {
+    if (sortedActionItems.length > 0) {
       return (
         <View style={styles.container}>
           {/* Action Items Header */}
@@ -400,7 +421,7 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
             onPress={() => toggleSection('items')}
           >
             <Text style={styles.sectionHeaderText}>
-              📋 Action Items ({actionItems.length})
+              📋 Action Items ({sortedActionItems.length})
             </Text>
             <Text style={styles.expandIcon}>
               {expandedSections.has(`items-${instanceId}`) ? '▼' : '▶'}
@@ -410,7 +431,7 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
           {/* Action Items List */}
           {expandedSections.has(`items-${instanceId}`) && (
             <View style={styles.itemsList}>
-              {actionItems.map((item) => (
+              {sortedActionItems.map((item) => (
                 <TouchableOpacity
                   key={item.number}
                   style={styles.itemCard}

@@ -1075,10 +1075,18 @@ CRITICAL FORMATTING RULES (for action items and priority messages):
 - Always include priority level in parentheses before the brackets: (High Priority) or (Medium Priority) or (Low Priority)
 - For action items, also include:
   * Assignee in format: "Assigned to: Name" or just the name if clear
-  * Deadline in format: "by YYYY-MM-DD" or "Deadline: YYYY-MM-DD"
-  * Original context message in quotes if helpful
-- Example for action items: "1. Review quarterly report (High Priority) [Team Meeting] (abc123) - Assigned to: Sarah, Deadline: 2025-11-01 - Context: "Please review ASAP""
+  * Deadline in format: ALWAYS use "Deadline: YYYY-MM-DD" with actual calculated dates:
+    - "now" or "ASAP" = today's date
+    - "today" or "on the way home" or "this evening" = today's date
+    - "tomorrow" = today + 1 day
+    - "next week" = today + 7 days  
+    - "end of week" = next Friday
+    - If a specific date is mentioned, use that date
+    - If no deadline mentioned, use "unspecified"
+  * Original context message in quotes ONLY if very helpful and brief
+- Example for action items: "1. Review quarterly report (High Priority) [Team Meeting] (abc123) - Assigned to: Sarah, Deadline: 2025-11-01"
 - Example for priorities: "1. Server is down! (Urgent Priority) [Direct Chat] (xyz789)"
+- IMPORTANT: Sort action items by deadline date (earliest first), then by priority within each date
 - After gathering information from tools, provide a synthesized answer
 
 Answer the user's question using the available tools.`;
