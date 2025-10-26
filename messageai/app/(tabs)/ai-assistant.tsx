@@ -284,10 +284,10 @@ export default function AIAssistant() {
     }
   }, [params.requestDecisions, params.conversationId]);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive OR when tab is first opened
   useEffect(() => {
     if (messages.length > 0) {
-      // Scroll to bottom whenever a new message is added
+      // Scroll to bottom whenever a new message is added or on initial load
       // Use longer timeout to ensure content is rendered first
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
