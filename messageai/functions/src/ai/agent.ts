@@ -541,6 +541,7 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
 
 /**
  * Get decisions from specific conversations or all conversations
+ * Same pattern as getConversationActionItems - extracts from messages
  */
 export const getConversationDecisions = functions.https.onCall(async (data, context) => {
   // Authentication check
@@ -562,18 +563,40 @@ export const getConversationDecisions = functions.https.onCall(async (data, cont
       limit,
     });
 
-    // Step 1: Get user's conversations if not specified
+    // Step 1: Get user's conversations if not specified (same as action items)
     let targetConversationIds = conversationIds;
     const conversationMap = new Map<string, string>();
 
     if (targetConversationIds.length === 0) {
-      // Get all user conversations
-      const conversationsSnapshot = await admin
-        .firestore()
-        .collection('conversations')
-        .where('participantIds', 'array-contains', userId)
-        .limit(20)
-        .get();
+      // Get user's last 10 conversations ordered by most recent message
+      let conversationsSnapshot;
+      try {
+        conversationsSnapshot = await admin
+          .firestore()
+          .collection('conversations')
+          .where('participantIds', 'array-contains', userId)
+          .orderBy('lastMessageAt', 'desc')
+          .limit(10) // Only check last 10 conversations for performance
+          .get();
+        
+        if (conversationsSnapshot.empty) {
+          conversationsSnapshot = await admin
+            .firestore()
+            .collection('conversations')
+            .where('participantIds', 'array-contains', userId)
+            .orderBy('updatedAt', 'desc')
+            .limit(10)
+            .get();
+        }
+      } catch (error) {
+        conversationsSnapshot = await admin
+          .firestore()
+          .collection('conversations')
+          .where('participantIds', 'array-contains', userId)
+          .orderBy('updatedAt', 'desc')
+          .limit(10)
+          .get();
+      }
 
       targetConversationIds = conversationsSnapshot.docs.map((doc) => doc.id);
       
@@ -609,42 +632,59 @@ export const getConversationDecisions = functions.https.onCall(async (data, cont
       };
     }
 
-    // Step 2: Query decisions from Firestore (batch by conversationIds)
+    functions.logger.info('Processing conversations for decisions', {
+      uid: userId,
+      conversationCount: targetConversationIds.length,
+    });
+
+    // Step 2: Call trackConversationDecisions for each conversation (SAME PATTERN AS ACTION ITEMS!)
+    const { trackConversationDecisions } = await import('../services/openai.service');
     const allDecisions: any[] = [];
 
-    // Process in batches of 10 (Firestore IN limit)
-    for (let i = 0; i < targetConversationIds.length; i += 10) {
-      const batch = targetConversationIds.slice(i, i + 10);
+    for (const conversationId of targetConversationIds) {
+      try {
+        // Fetch messages (same as action items)
+        const messagesSnapshot = await admin
+          .firestore()
+          .collection('messages')
+          .where('conversationId', '==', conversationId)
+          .where('encrypted', '==', false)
+          .orderBy('timestamp', 'asc')
+          .limit(50)
+          .get();
 
-      // Query WITHOUT orderBy to avoid complex composite index requirement
-      // We'll sort in-memory instead
-      const decisionsSnapshot = await admin
-        .firestore()
-        .collection('decisions')
-        .where('conversationId', 'in', batch)
-        .get();
+        if (messagesSnapshot.empty) {
+          continue;
+        }
 
-      decisionsSnapshot.forEach((doc) => {
-        const data = doc.data();
-        allDecisions.push({
-          id: doc.id,
-          conversationId: data.conversationId,
-          conversationName: conversationMap.get(data.conversationId) || 'Unknown',
-          decision: data.decision,
-          decisionMaker: data.decisionMaker,
-          decidedAt: data.decidedAt,
-          context: data.context,
-          impactLevel: data.impactLevel,
-          confidence: data.confidence || 0.7,
+        // Format messages
+        const messages = messagesSnapshot.docs.map((doc) => doc.data());
+
+        // Call OpenAI to extract decisions
+        const decisions = await trackConversationDecisions(messages, conversationId);
+
+        // Add conversation context
+        decisions.forEach((decision: any) => {
+          allDecisions.push({
+            ...decision,
+            conversationName: conversationMap.get(conversationId) || 'Unknown',
+          });
         });
-      });
 
-      if (allDecisions.length >= limit * 3) {
-        break; // Get more than we need for better sorting
+        functions.logger.info('Extracted decisions from conversation', {
+          conversationId,
+          decisionCount: decisions.length,
+        });
+      } catch (error) {
+        functions.logger.error('Failed to extract decisions from conversation', {
+          conversationId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        // Continue with other conversations
       }
     }
 
-    // Sort by impact level then by date
+    // Sort by impact level then by date (same as before)
     const impactOrder = { high: 0, medium: 1, low: 2 };
     const sortedDecisions = allDecisions
       .sort((a, b) => {
