@@ -49,8 +49,8 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['main', 'items', 'priorities']));
 
   // Check if response is action items or priorities
-  const isActionItems = /action items?:/i.test(content);
-  const isPriorities = /priorities/i.test(content) || /priority messages/i.test(content);
+  const isActionItems = /action items?:/i.test(content) || /here are your action items/i.test(content);
+  const isPriorities = /priorities/i.test(content) || /priority messages/i.test(content) || /current priorities/i.test(content);
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => {
@@ -72,9 +72,49 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       
-      // Try multiple formats:
-      // Format 1: "1. Title (Priority) - [Location](conversationId: xxx)"
-      let match = line.match(/^(\d+)\.\s*(.+?)\s*\((High|Medium|Low|Unspecified)\s+Priority\)\s*-\s*\[(.+?)\]\(conversationId:\s*(.+?)\)/i);
+      // Format 1: "1. **Title** - Description [Context](conversationId)"
+      // Example: "1. **Help with server issue** - This is an urgent task from the conversation \"Direct Chat\". The deadline is on 2025-10-23. [Context](hK58TZ1Xpa5QkCHEZXyp)"
+      let match = line.match(/^(\d+)\.\s*\*\*(.+?)\*\*\s*-\s*.+?\[Context\]\((.+?)\)/i);
+      
+      if (match) {
+        const [, num, title, conversationId] = match;
+        // Try to extract priority and deadline from the description
+        const priorityMatch = line.match(/(urgent|high|medium|low)\s+(?:priority|task)/i);
+        const deadlineMatch = line.match(/deadline[:\s]+(\d{4}-\d{2}-\d{2})/i);
+        
+        const priority = priorityMatch ? (priorityMatch[1].charAt(0).toUpperCase() + priorityMatch[1].slice(1).toLowerCase()) : 'Unspecified';
+        
+        items.push({
+          number: parseInt(num),
+          title: title.trim(),
+          priority: priority as any,
+          location: 'From Conversation',
+          conversationId: conversationId.trim(),
+          fullText: line,
+        });
+        continue;
+      }
+      
+      // Format 2: "1. Title (Priority, Deadline: date)"
+      // Example: "1. Provide help for the server issue (High priority, Deadline: 2025-10-23)"
+      match = line.match(/^(\d+)\.\s*(.+?)\s*\((High|Medium|Low|Unspecified)\s+priority(?:,\s*Deadline:\s*(.+?))?\)/i);
+      
+      if (match) {
+        const [, num, title, priority, deadline] = match;
+        
+        items.push({
+          number: parseInt(num),
+          title: title.trim(),
+          priority: priority as any,
+          location: 'From Conversation',
+          conversationId: undefined,
+          fullText: line,
+        });
+        continue;
+      }
+      
+      // Format 3: Legacy format "1. Title (Priority) - [Location](conversationId: xxx)"
+      match = line.match(/^(\d+)\.\s*(.+?)\s*\((High|Medium|Low|Unspecified)\s+Priority\)\s*-\s*\[(.+?)\]\(conversationId:\s*(.+?)\)/i);
       
       if (match) {
         const [, num, title, priority, location, conversationId] = match;
@@ -89,22 +129,17 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
         continue;
       }
       
-      // Format 2: "1. Title - Priority priority. Context: ..."
-      // Example: "1. Help with server issue - High priority. Context: Urgent: the server is down!"
+      // Format 4: Simple "1. Title - Priority priority. Context: ..."
       match = line.match(/^(\d+)\.\s*(.+?)\s*-\s*(High|Medium|Low|Unspecified)\s+priority/i);
       
       if (match) {
         const [, num, title, priority] = match;
         
-        // Try to extract context/location info
-        const contextMatch = line.match(/Context:\s*(.+?)(?:\.|$)/i);
-        const location = 'From Conversation'; // Default
-        
         items.push({
           number: parseInt(num),
           title: title.trim(),
           priority: priority as any,
-          location: location,
+          location: 'From Conversation',
           conversationId: undefined,
           fullText: line,
         });
@@ -117,37 +152,25 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
   // Parse priority messages from content
   const parsePriorityMessages = (): ParsedPriorityMessage[] => {
     const items: ParsedPriorityMessage[] = [];
-    
-    // Check if this is a single priority message (different format)
-    if (content.includes('Your current priorities are related to')) {
-      // Extract the main message as a single priority item
-      items.push({
-        number: 1,
-        title: 'Urgent: Server is down',
-        priority: 'Urgent',
-        location: 'Direct Chat',
-        conversationId: undefined,
-        fullText: content,
-      });
-      return items;
-    }
-    
     const lines = content.split('\n');
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       
-      // Match pattern: "1. Title (Priority) - [Location](conversationId: xxx)"
-      const match = line.match(/^(\d+)\.\s*(.+?)\s*\((High|Urgent)\s+Priority\)\s*-\s*\[(.+?)\]\(conversationId:\s*(.+?)\)/i);
+      // Format: '1. "Urgent: Server is down!" - This message was sent by Collaborator in the Direct Chat conversation on 2025-10-25 at 01:12:10.'
+      const match = line.match(/^(\d+)\.\s*"(.+?)"\s*-\s*This message was (?:sent by|also sent by)\s+(.+?)\s+in the\s+(.+?)\s+conversation/i);
       
       if (match) {
-        const [, num, title, priority, location, conversationId] = match;
+        const [, num, title, sender, location] = match;
+        // Extract priority from title if present
+        const priority = title.toLowerCase().includes('urgent') ? 'Urgent' : 'High';
+        
         items.push({
           number: parseInt(num),
           title: title.trim(),
           priority: priority as any,
           location: location.trim(),
-          conversationId: conversationId.trim(),
+          conversationId: undefined, // Not provided in this format
           fullText: line,
         });
       }
@@ -211,6 +234,13 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
   if (isActionItems) {
     const actionItems = parseActionItems();
     const summaryText = getSummaryText();
+    
+    // Debug: Log what we're trying to parse
+    console.log('🔍 AgentResponseDisplay - Action Items Mode:', {
+      contentPreview: content.substring(0, 200),
+      parsedCount: actionItems.length,
+      isActionItems,
+    });
     
     if (actionItems.length > 0) {
       return (
@@ -288,6 +318,13 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
     const priorityMessages = parsePriorityMessages();
     const summaryText = getSummaryText();
     
+    // Debug: Log what we're trying to parse
+    console.log('🔍 AgentResponseDisplay - Priorities Mode:', {
+      contentPreview: content.substring(0, 200),
+      parsedCount: priorityMessages.length,
+      isPriorities,
+    });
+    
     if (priorityMessages.length > 0) {
       return (
         <View style={styles.container}>
@@ -360,8 +397,20 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
   }
 
   // Fallback: render as formatted text
+  console.log('⚠️ AgentResponseDisplay - Fallback to plain text:', {
+    contentLength: content.length,
+    contentPreview: content.substring(0, 300),
+    isActionItems,
+    isPriorities,
+  });
+  
   return (
     <View style={styles.container}>
+      <View style={styles.noteCard}>
+        <Text style={styles.noteText}>
+          ⚠️ Showing raw response (parser didn't match format)
+        </Text>
+      </View>
       <Text style={styles.fallbackText}>{content}</Text>
     </View>
   );
@@ -369,7 +418,7 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 12,
+    padding: 12, // Add padding to the container
   },
   summaryCard: {
     backgroundColor: '#F0F9FF',

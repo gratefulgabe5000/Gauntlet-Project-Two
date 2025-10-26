@@ -284,14 +284,20 @@ export default function AIAssistant() {
     }
   }, [params.requestDecisions, params.conversationId]);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive (but only for new messages, not scrolling)
   useEffect(() => {
     if (messages.length > 0) {
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      // Only scroll if it's a fresh message (just added)
+      const lastMessage = messages[messages.length - 1];
+      const isRecent = Date.now() - new Date(lastMessage.timestamp).getTime() < 1000; // Within 1 second
+      
+      if (isRecent) {
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
     }
-  }, [messages]);
+  }, [messages.length]); // Only trigger when message count changes
 
   // Save messages to AsyncStorage
   useEffect(() => {
@@ -836,9 +842,9 @@ export default function AIAssistant() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messagesList}
           showsVerticalScrollIndicator={false}
-          onContentSizeChange={() =>
-            flatListRef.current?.scrollToEnd({ animated: true })
-          }
+          maintainVisibleContentPosition={{
+            minIndexForVisible: 0,
+          }}
         />
       )}
 
@@ -967,6 +973,7 @@ const styles = StyleSheet.create({
     borderColor: '#10B981',
     borderWidth: 2,
     maxWidth: '95%',
+    padding: 0, // Remove padding for agent bubbles since cards handle their own spacing
   },
   actionItemsContainer: {
     marginTop: 12,
