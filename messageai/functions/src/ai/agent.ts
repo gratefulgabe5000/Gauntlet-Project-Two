@@ -1236,7 +1236,7 @@ Answer the user's question using the available tools.`;
         type: 'function',
         function: {
           name: 'getConversationDecisions',
-          description: 'Get decisions made in conversations. Use this when user asks about decisions, commitments, or what was decided.',
+          description: 'Extract and analyze decisions made in conversations using AI. Use this when user asks about "decisions", "what was decided", "what did we decide", or "decisions about X". This tool will find ALL decisions first, then filter by topic. ALWAYS use this instead of searchAllConversations for decision-related queries.',
           parameters: {
             type: 'object',
             properties: {
@@ -1279,7 +1279,7 @@ Answer the user's question using the available tools.`;
         type: 'function',
         function: {
           name: 'searchAllConversations',
-          description: 'Search for specific topics, keywords, or concepts across all conversations. Use this when user asks to find specific information.',
+          description: 'Search for specific topics, keywords, or concepts across all conversations. Use this for general information retrieval. DO NOT use this for decisions (use getConversationDecisions), action items (use getConversationActionItems), or priorities (use getPriorityMessages) - those have dedicated tools.',
           parameters: {
             type: 'object',
             properties: {
