@@ -64,7 +64,7 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
     });
   };
 
-  // Parse action items from content
+  // Parse action items from content - VERY flexible parser
   const parseActionItems = (): ParsedActionItem[] => {
     const items: ParsedActionItem[] = [];
     const lines = content.split('\n');
@@ -77,95 +77,64 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
         continue;
       }
       
-      // Format 1: "1. **Title** - Description [Context](conversationId)"
-      // Example: "1. **Help with server issue** - This is an urgent task from the conversation \"Direct Chat\". The deadline is on 2025-10-23. [Context](hK58TZ1Xpa5QkCHEZXyp)"
-      let match = line.match(/^(\d+)\.\s*\*\*(.+?)\*\*\s*-\s*.+?\[Context\]\((.+?)\)/i);
+      // Most flexible pattern: Just look for "number. text"
+      const basicMatch = line.match(/^(\d+)\.\s+(.+)$/);
       
-      if (match) {
-        const [, num, title, conversationId] = match;
-        // Try to extract priority and deadline from the description
-        const priorityMatch = line.match(/(urgent|high|medium|low)\s+(?:priority|task)/i);
+      if (basicMatch) {
+        const [, num, restOfLine] = basicMatch;
+        let title = restOfLine;
+        let priority = 'Unspecified';
+        let location = 'From Conversation';
+        let conversationId: string | undefined;
         
-        const priority = priorityMatch ? (priorityMatch[1].charAt(0).toUpperCase() + priorityMatch[1].slice(1).toLowerCase()) : 'Unspecified';
+        // Try to extract priority from parentheses: (High Priority) or (High priority)
+        const priorityMatch = restOfLine.match(/\(([A-Za-z]+)\s+[Pp]riority\)/);
+        if (priorityMatch) {
+          priority = priorityMatch[1].charAt(0).toUpperCase() + priorityMatch[1].slice(1).toLowerCase();
+          // Remove priority from title
+          title = restOfLine.replace(/\([A-Za-z]+\s+[Pp]riority\)/, '').trim();
+        }
+        
+        // Try to extract location from brackets: [Direct Chat]
+        const locationMatch = restOfLine.match(/\[([^\]]+)\]/);
+        if (locationMatch) {
+          location = locationMatch[1];
+          // Remove location from title
+          title = title.replace(/\[[^\]]+\]/, '').trim();
+        }
+        
+        // Try to extract conversationId from [Context](id) pattern
+        const contextMatch = restOfLine.match(/\[Context\]\(([^)]+)\)/);
+        if (contextMatch) {
+          conversationId = contextMatch[1];
+          title = title.replace(/\[Context\]\([^)]+\)/, '').trim();
+        }
+        
+        // Extract priority from keywords in the text
+        if (priority === 'Unspecified') {
+          if (/\bHigh\b/i.test(restOfLine)) priority = 'High';
+          else if (/\bMedium\b/i.test(restOfLine)) priority = 'Medium';
+          else if (/\bLow\b/i.test(restOfLine)) priority = 'Low';
+          else if (/\bUrgent\b/i.test(restOfLine)) priority = 'High';
+        }
+        
+        // Clean up title - remove extra dashes, deadlines, etc
+        title = title.replace(/^[-–—]\s*/, '').trim();
+        title = title.replace(/\s*[-–—]\s*Deadline:.*$/, '').trim();
+        title = title.replace(/\s*[-–—]\s*$/, '').trim();
+        title = title.replace(/\s+by\s+\d{4}-\d{2}-\d{2}.*$/, '').trim();
+        
+        // If title is too short or just symbols, skip it
+        if (title.length < 3 || !/[a-zA-Z]/.test(title)) {
+          continue;
+        }
         
         items.push({
           number: parseInt(num),
-          title: title.trim(),
+          title: title,
           priority: priority as any,
-          location: 'From Conversation',
-          conversationId: conversationId.trim(),
-          fullText: line,
-        });
-        continue;
-      }
-      
-      // Format 2: "1. Title (Priority, Deadline: date)" or "1. Title (Priority priority, Deadline: date)"
-      // Example: "1. Provide help for the server issue (High priority, Deadline: 2025-10-23)"
-      match = line.match(/^(\d+)\.\s*(.+?)\s*\(([A-Za-z]+)\s+priority(?:,\s*Deadline:\s*(.+?))?\)/i);
-      
-      if (match) {
-        const [, num, title, priority] = match;
-        
-        items.push({
-          number: parseInt(num),
-          title: title.trim(),
-          priority: (priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase()) as any,
-          location: 'From Conversation',
-          conversationId: undefined,
-          fullText: line,
-        });
-        continue;
-      }
-      
-      // Format 3: "1. Title (Priority Priority) - [Location]" or similar variations
-      // Example: "1. Help with server issue (High Priority) – Deadline: 2025-10-23 [Direct Chat]"
-      match = line.match(/^(\d+)\.\s*(.+?)\s*\(([A-Za-z]+)\s+Priority\)/i);
-      
-      if (match) {
-        const [, num, title, priority] = match;
-        // Try to extract location from the rest
-        const locationMatch = line.match(/\[([^\]]+)\]/);
-        const location = locationMatch ? locationMatch[1] : 'From Conversation';
-        
-        items.push({
-          number: parseInt(num),
-          title: title.trim(),
-          priority: (priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase()) as any,
           location: location,
-          conversationId: undefined,
-          fullText: line,
-        });
-        continue;
-      }
-      
-      // Format 4: Legacy format "1. Title (Priority) - [Location](conversationId: xxx)"
-      match = line.match(/^(\d+)\.\s*(.+?)\s*\(([A-Za-z]+)\s*(?:Priority|priority)\)\s*-\s*\[(.+?)\]\(conversationId:\s*(.+?)\)/i);
-      
-      if (match) {
-        const [, num, title, priority, location, conversationId] = match;
-        items.push({
-          number: parseInt(num),
-          title: title.trim(),
-          priority: (priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase()) as any,
-          location: location.trim(),
-          conversationId: conversationId.trim(),
-          fullText: line,
-        });
-        continue;
-      }
-      
-      // Format 5: Simple "1. Title - Priority priority. Context: ..."
-      match = line.match(/^(\d+)\.\s*(.+?)\s*-\s*([A-Za-z]+)\s+priority/i);
-      
-      if (match) {
-        const [, num, title, priority] = match;
-        
-        items.push({
-          number: parseInt(num),
-          title: title.trim(),
-          priority: (priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase()) as any,
-          location: 'From Conversation',
-          conversationId: undefined,
+          conversationId: conversationId,
           fullText: line,
         });
       }
@@ -174,7 +143,7 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
     return items;
   };
 
-  // Parse priority messages from content
+  // Parse priority messages from content - VERY flexible parser
   const parsePriorityMessages = (): ParsedPriorityMessage[] => {
     const items: ParsedPriorityMessage[] = [];
     const lines = content.split('\n');
@@ -183,24 +152,65 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
       const line = lines[i].trim();
       
       // Skip empty lines and headers
-      if (!line || line.toLowerCase().includes('your current priorities') || line.toLowerCase().includes('priority messages:')) {
+      if (!line || line.toLowerCase().includes('your current priorities') || line.toLowerCase().includes('priority messages:') || line.toLowerCase().includes('please attend')) {
         continue;
       }
       
-      // Format: '1. "Urgent: Server is down!" - This message was sent by Collaborator in the Direct Chat conversation on 2025-10-25 at 01:12:10.'
-      const match = line.match(/^(\d+)\.\s*"(.+?)"\s*-\s*This message was (?:sent by|also sent by)\s+(.+?)\s+in the\s+(.+?)\s+conversation/i);
+      // Most flexible pattern: Just look for "number. text"
+      const basicMatch = line.match(/^(\d+)\.\s+(.+)$/);
       
-      if (match) {
-        const [, num, title, sender, location] = match;
-        // Extract priority from title if present
-        const priority = title.toLowerCase().includes('urgent') ? 'Urgent' : 'High';
+      if (basicMatch) {
+        const [, num, restOfLine] = basicMatch;
+        let title = restOfLine;
+        let priority = 'High';
+        let location = 'Direct Chat';
+        
+        // Remove quotes if present
+        title = title.replace(/^["'](.+?)["']/, '$1');
+        
+        // Try to extract location from patterns like "from the conversation X" or "in the X conversation"
+        const locationMatch1 = restOfLine.match(/from (?:the )?(.+?)\s+conversation/i);
+        const locationMatch2 = restOfLine.match(/in (?:the )?(.+?)\s+conversation/i);
+        if (locationMatch1) {
+          location = locationMatch1[1].trim();
+          // Clean up location from title
+          title = title.split(/\s+from\s+(?:the\s+)?/i)[0].trim();
+        } else if (locationMatch2) {
+          location = locationMatch2[1].trim();
+          title = title.split(/\s+in\s+(?:the\s+)?/i)[0].trim();
+        }
+        
+        // Extract priority from the text
+        if (/\bUrgent\b/i.test(restOfLine)) {
+          priority = 'Urgent';
+        } else if (/\bHigh\b/i.test(restOfLine)) {
+          priority = 'High';
+        }
+        
+        // If title starts with Urgent: or High:, extract it
+        const priorityPrefixMatch = title.match(/^(Urgent|High):\s*(.+)/i);
+        if (priorityPrefixMatch) {
+          priority = priorityPrefixMatch[1].charAt(0).toUpperCase() + priorityPrefixMatch[1].slice(1).toLowerCase();
+          title = priorityPrefixMatch[2];
+        }
+        
+        // Clean up title
+        title = title.replace(/^["']/, '').replace(/["']$/, '').trim();
+        title = title.replace(/\s*[-–—]\s*This message.*$/, '').trim();
+        title = title.replace(/\s+sent by.*$/, '').trim();
+        title = title.replace(/\s+from (?:the )?conversation.*$/i, '').trim();
+        
+        // If title is too short or just symbols, skip it
+        if (title.length < 3 || !/[a-zA-Z]/.test(title)) {
+          continue;
+        }
         
         items.push({
           number: parseInt(num),
-          title: title.trim(),
+          title: title,
           priority: priority as any,
-          location: location.trim(),
-          conversationId: undefined, // Not provided in this format
+          location: location,
+          conversationId: undefined,
           fullText: line,
         });
       }
