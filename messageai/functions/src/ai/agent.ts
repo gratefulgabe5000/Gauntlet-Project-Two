@@ -544,6 +544,13 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
  * Same pattern as getConversationActionItems - extracts from messages
  */
 export const getConversationDecisions = functions.https.onCall(async (data, context) => {
+  // CRITICAL: Log function entry immediately
+  functions.logger.info('🔵 getConversationDecisions CALLED', {
+    timestamp: new Date().toISOString(),
+    hasAuth: !!context.auth,
+    data,
+  });
+
   // Authentication check
   if (!context.auth) {
     throw new functions.https.HttpsError(
@@ -557,9 +564,10 @@ export const getConversationDecisions = functions.https.onCall(async (data, cont
     const conversationIds = data.conversationIds || [];
     const limit = data.limit || 20;
 
-    functions.logger.info('Getting conversation decisions', {
+    functions.logger.info('🟢 Getting conversation decisions - START', {
       uid: userId,
       conversationIds: conversationIds.length,
+      requestedConversationIds: conversationIds,
       limit,
     });
 
@@ -604,6 +612,11 @@ export const getConversationDecisions = functions.https.onCall(async (data, cont
         const data = doc.data();
         conversationMap.set(doc.id, data.name || 'Direct Chat');
       });
+      
+      functions.logger.info('🟡 Fetched last 10 conversations for decisions', {
+        count: targetConversationIds.length,
+        conversationIds: targetConversationIds,
+      });
     } else {
       // Verify user has access
       const conversationsSnapshot = await admin
@@ -635,14 +648,22 @@ export const getConversationDecisions = functions.https.onCall(async (data, cont
     functions.logger.info('Processing conversations for decisions', {
       uid: userId,
       conversationCount: targetConversationIds.length,
+      conversationIds: targetConversationIds.slice(0, 5),
     });
 
     // Step 2: Call trackConversationDecisions for each conversation (SAME PATTERN AS ACTION ITEMS!)
     const { trackConversationDecisions } = await import('../services/openai.service');
     const allDecisions: any[] = [];
+    
+    functions.logger.info('🟡 Starting extraction from conversations', {
+      totalConversations: targetConversationIds.length,
+      conversationIds: targetConversationIds,
+    });
 
     for (const conversationId of targetConversationIds) {
       try {
+        functions.logger.info('🟡 Processing conversation for decisions', { conversationId });
+        
         // Fetch messages (same as action items)
         const messagesSnapshot = await admin
           .firestore()
@@ -654,14 +675,26 @@ export const getConversationDecisions = functions.https.onCall(async (data, cont
           .get();
 
         if (messagesSnapshot.empty) {
+          functions.logger.info('No messages found in conversation', { conversationId });
           continue;
         }
+
+        functions.logger.info('Found messages, extracting decisions', {
+          conversationId,
+          messageCount: messagesSnapshot.size,
+        });
 
         // Format messages
         const messages = messagesSnapshot.docs.map((doc) => doc.data());
 
         // Call OpenAI to extract decisions
         const decisions = await trackConversationDecisions(messages, conversationId);
+
+        functions.logger.info('Extracted decisions from conversation', {
+          conversationId,
+          decisionCount: decisions.length,
+          decisionsPreview: decisions.slice(0, 2).map((d: any) => d.decision),
+        });
 
         // Add conversation context
         decisions.forEach((decision: any) => {
@@ -670,15 +703,11 @@ export const getConversationDecisions = functions.https.onCall(async (data, cont
             conversationName: conversationMap.get(conversationId) || 'Unknown',
           });
         });
-
-        functions.logger.info('Extracted decisions from conversation', {
-          conversationId,
-          decisionCount: decisions.length,
-        });
       } catch (error) {
         functions.logger.error('Failed to extract decisions from conversation', {
           conversationId,
           error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
         });
         // Continue with other conversations
       }
@@ -698,10 +727,12 @@ export const getConversationDecisions = functions.https.onCall(async (data, cont
       })
       .slice(0, limit);
 
-    functions.logger.info('Decisions retrieved', {
+    functions.logger.info('🟢 Decisions retrieved - FINAL RESULT', {
       uid: userId,
       count: sortedDecisions.length,
       totalFound: allDecisions.length,
+      conversationsProcessed: targetConversationIds.length,
+      decisionsPreview: sortedDecisions.slice(0, 3).map((d: any) => ({ decision: d.decision, conversationName: d.conversationName })),
     });
 
     return {
@@ -710,9 +741,11 @@ export const getConversationDecisions = functions.https.onCall(async (data, cont
       timestamp: new Date().toISOString(),
     };
   } catch (error) {
-    functions.logger.error('Failed to get decisions', {
-      uid: context.auth.uid,
+    functions.logger.error('🔴 FAILED to get decisions', {
+      uid: context.auth?.uid,
       error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      errorType: error?.constructor?.name,
     });
 
     if (error instanceof functions.https.HttpsError) {
