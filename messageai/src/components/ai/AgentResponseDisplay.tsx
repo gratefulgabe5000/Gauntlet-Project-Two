@@ -54,9 +54,10 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
     new Set([`main-${instanceId}`, `items-${instanceId}`, `priorities-${instanceId}`])
   );
 
-  // Check if response is action items or priorities - VERY flexible detection
-  const isActionItems = /action\s*items?/i.test(content) || /\bactions?\b/i.test(content);
-  const isPriorities = /priorit/i.test(content) || /important/i.test(content) || /urgent/i.test(content);
+  // Check if response is action items or priorities - ULTRA flexible detection
+  // Accept if content mentions these concepts at all, even in "no results" messages
+  const isActionItems = /action\s*items?/i.test(content) || /\bactions?\b/i.test(content) || /to\s*do/i.test(content);
+  const isPriorities = /priorit/i.test(content) || /important/i.test(content) || /urgent/i.test(content) || /high\s*priority/i.test(content);
 
   const toggleSection = (section: string) => {
     const sectionKey = `${section}-${instanceId}`;
@@ -289,6 +290,15 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
       isActionItems,
     });
     
+    // If no action items found, show the full text as a simple message
+    if (actionItems.length === 0) {
+      return (
+        <View style={styles.container}>
+          <Text style={styles.fallbackText}>{content}</Text>
+        </View>
+      );
+    }
+    
     if (actionItems.length > 0) {
       return (
         <View style={styles.container}>
@@ -367,6 +377,15 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
       parsedCount: priorityMessages.length,
       isPriorities,
     });
+    
+    // If no priority messages found, show the full text as a simple message
+    if (priorityMessages.length === 0) {
+      return (
+        <View style={styles.container}>
+          <Text style={styles.fallbackText}>{content}</Text>
+        </View>
+      );
+    }
     
     if (priorityMessages.length > 0) {
       return (

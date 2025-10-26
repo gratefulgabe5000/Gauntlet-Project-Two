@@ -288,9 +288,13 @@ export default function AIAssistant() {
   useEffect(() => {
     if (messages.length > 0) {
       // Scroll to bottom whenever a new message is added or on initial load
-      // Use longer timeout to ensure content is rendered first
+      // Use longer timeout to ensure content is rendered first, then scroll twice to ensure we get all the way down
       setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
+        flatListRef.current?.scrollToEnd({ animated: false });
+        // Second scroll after another delay to ensure we're at the absolute bottom
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
       }, 300);
     }
   }, [messages]); // Trigger when messages array changes (including content changes)
