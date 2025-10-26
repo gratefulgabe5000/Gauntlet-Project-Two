@@ -189,38 +189,31 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
         let location = 'Direct Chat';
         let conversationId: string | undefined;
         
-        // Remove quotes if present
-        title = title.replace(/^["'](.+?)["']/, '$1');
+        // FIRST: Extract conversationId from (id) pattern BEFORE any cleaning
+        const idMatch = restOfLine.match(/\]\s*\(([^)]+)\)/);  // After brackets
+        if (idMatch) {
+          conversationId = idMatch[1];
+        } else {
+          // Fallback: try to find any (id-looking) pattern with hyphens or long alphanumeric
+          const fallbackIdMatch = restOfLine.match(/\(([a-zA-Z0-9]{15,})\)/);
+          if (fallbackIdMatch) {
+            conversationId = fallbackIdMatch[1];
+          }
+        }
         
+        // SECOND: Extract location and priority
         // Try to extract location from brackets: [Direct Chat]
         const locationMatch = restOfLine.match(/\[([^\]]+)\]/);
         if (locationMatch) {
           location = locationMatch[1];
-          title = title.replace(/\[[^\]]+\]/, '').trim();
         } else {
           // Fallback: Try to extract location from patterns like "from the conversation X"
           const locationMatch1 = restOfLine.match(/from (?:the )?(.+?)\s+conversation/i);
           const locationMatch2 = restOfLine.match(/in (?:the )?(.+?)\s+conversation/i);
           if (locationMatch1) {
             location = locationMatch1[1].trim();
-            title = title.split(/\s+from\s+(?:the\s+)?/i)[0].trim();
           } else if (locationMatch2) {
             location = locationMatch2[1].trim();
-            title = title.split(/\s+in\s+(?:the\s+)?/i)[0].trim();
-          }
-        }
-        
-        // Try to extract conversationId from (id) pattern that comes RIGHT AFTER location brackets
-        const idMatch = restOfLine.match(/\]\s*\(([^)]+)\)/);
-        if (idMatch) {
-          conversationId = idMatch[1];
-          title = title.replace(/\([^)]+\)/, '').trim();
-        } else {
-          // Fallback: try to find any (id-looking) pattern with hyphens or long alphanumeric
-          const fallbackIdMatch = restOfLine.match(/\(([a-zA-Z0-9]{15,})\)/);
-          if (fallbackIdMatch) {
-            conversationId = fallbackIdMatch[1];
-            title = title.replace(/\([a-zA-Z0-9]{15,}\)/, '').trim();
           }
         }
         
@@ -228,7 +221,6 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
         const priorityMatch = restOfLine.match(/\(([A-Za-z]+)\s+[Pp]riority\)/);
         if (priorityMatch) {
           priority = priorityMatch[1].charAt(0).toUpperCase() + priorityMatch[1].slice(1).toLowerCase();
-          title = title.replace(/\([A-Za-z]+\s+[Pp]riority\)/, '').trim();
         } else {
           // Extract priority from the text
           if (/\bUrgent\b/i.test(restOfLine)) {
@@ -238,17 +230,27 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
           }
           
           // If title starts with Urgent: or High:, extract it
-          const priorityPrefixMatch = title.match(/^(Urgent|High):\s*(.+)/i);
+          const priorityPrefixMatch = restOfLine.match(/^(Urgent|High):\s*(.+)/i);
           if (priorityPrefixMatch) {
             priority = priorityPrefixMatch[1].charAt(0).toUpperCase() + priorityPrefixMatch[1].slice(1).toLowerCase();
-            title = priorityPrefixMatch[2];
           }
         }
         
-        // Clean up title
-        title = title.replace(/^["']/, '').replace(/["']$/, '').trim();
-        title = title.replace(/\s*[-–—]\s*This message.*$/, '').trim();
-        title = title.replace(/\s+sent by.*$/, '').trim();
+        // THIRD: Clean up title - remove EVERYTHING we extracted
+        title = restOfLine;
+        // Remove priority parentheses
+        title = title.replace(/\([A-Za-z]+\s+[Pp]riority\)/g, '').trim();
+        // Remove location brackets
+        title = title.replace(/\[[^\]]+\]/g, '').trim();
+        // Remove conversationId parentheses (any long alphanumeric in parens)
+        title = title.replace(/\([A-Za-z0-9]{15,}\)/g, '').trim();
+        // Remove quotes
+        title = title.replace(/^["']+|["']+$/g, '').trim();
+        // Remove "Urgent:" or "High:" prefix
+        title = title.replace(/^(Urgent|High):\s*/i, '').trim();
+        // Remove extra descriptive text
+        title = title.replace(/\s*[-–—]\s*This message.*$/i, '').trim();
+        title = title.replace(/\s+sent by.*$/i, '').trim();
         title = title.replace(/\s+from (?:the )?conversation.*$/i, '').trim();
         
         // If title is too short or just symbols, skip it
