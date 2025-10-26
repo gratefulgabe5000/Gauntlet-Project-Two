@@ -44,13 +44,35 @@ export const getUserConversations = functions.https.onCall(async (data, context)
     });
 
     // Query conversations where user is a participant
-    const conversationsSnapshot = await admin
-      .firestore()
-      .collection('conversations')
-      .where('participantIds', 'array-contains', userId)
-      .orderBy('lastMessageAt', 'desc')
-      .limit(limit)
-      .get();
+    // Try lastMessageAt first, fall back to updatedAt
+    let conversationsSnapshot;
+    try {
+      conversationsSnapshot = await admin
+        .firestore()
+        .collection('conversations')
+        .where('participantIds', 'array-contains', userId)
+        .orderBy('lastMessageAt', 'desc')
+        .limit(limit)
+        .get();
+      
+      if (conversationsSnapshot.empty) {
+        conversationsSnapshot = await admin
+          .firestore()
+          .collection('conversations')
+          .where('participantIds', 'array-contains', userId)
+          .orderBy('updatedAt', 'desc')
+          .limit(limit)
+          .get();
+      }
+    } catch (error) {
+      conversationsSnapshot = await admin
+        .firestore()
+        .collection('conversations')
+        .where('participantIds', 'array-contains', userId)
+        .orderBy('updatedAt', 'desc')
+        .limit(limit)
+        .get();
+    }
 
     if (conversationsSnapshot.empty) {
       return {
@@ -128,13 +150,35 @@ export const getPriorityMessages = functions.https.onCall(async (data, context) 
     });
 
     // Step 1: Get user's last 10 conversation IDs (most recent first)
-    const conversationsSnapshot = await admin
-      .firestore()
-      .collection('conversations')
-      .where('participantIds', 'array-contains', userId)
-      .orderBy('lastMessageAt', 'desc') // Order by most recent first
-      .limit(10) // Only check last 10 conversations for performance
-      .get();
+    // Try lastMessageAt first, fall back to updatedAt
+    let conversationsSnapshot;
+    try {
+      conversationsSnapshot = await admin
+        .firestore()
+        .collection('conversations')
+        .where('participantIds', 'array-contains', userId)
+        .orderBy('lastMessageAt', 'desc') // Order by most recent first
+        .limit(10) // Only check last 10 conversations for performance
+        .get();
+      
+      if (conversationsSnapshot.empty) {
+        conversationsSnapshot = await admin
+          .firestore()
+          .collection('conversations')
+          .where('participantIds', 'array-contains', userId)
+          .orderBy('updatedAt', 'desc')
+          .limit(10)
+          .get();
+      }
+    } catch (error) {
+      conversationsSnapshot = await admin
+        .firestore()
+        .collection('conversations')
+        .where('participantIds', 'array-contains', userId)
+        .orderBy('updatedAt', 'desc')
+        .limit(10)
+        .get();
+    }
 
     if (conversationsSnapshot.empty) {
       return {
@@ -283,13 +327,39 @@ export const getConversationActionItems = functions.https.onCall(async (data, co
 
     if (targetConversationIds.length === 0) {
       // Get user's last 10 conversations ordered by most recent message
-      const conversationsSnapshot = await admin
-        .firestore()
-        .collection('conversations')
-        .where('participantIds', 'array-contains', userId)
-        .orderBy('lastMessageAt', 'desc') // Order by most recent first
-        .limit(10) // Only check last 10 conversations for performance
-        .get();
+      // Try lastMessageAt first, fall back to updatedAt if needed
+      let conversationsSnapshot;
+      try {
+        conversationsSnapshot = await admin
+          .firestore()
+          .collection('conversations')
+          .where('participantIds', 'array-contains', userId)
+          .orderBy('lastMessageAt', 'desc') // Order by most recent first
+          .limit(10) // Only check last 10 conversations for performance
+          .get();
+        
+        // If no results with lastMessageAt, try updatedAt
+        if (conversationsSnapshot.empty) {
+          functions.logger.warn('No conversations found with lastMessageAt, trying updatedAt');
+          conversationsSnapshot = await admin
+            .firestore()
+            .collection('conversations')
+            .where('participantIds', 'array-contains', userId)
+            .orderBy('updatedAt', 'desc')
+            .limit(10)
+            .get();
+        }
+      } catch (error) {
+        // If lastMessageAt index doesn't exist, fall back to updatedAt
+        functions.logger.warn('lastMessageAt query failed, falling back to updatedAt', { error });
+        conversationsSnapshot = await admin
+          .firestore()
+          .collection('conversations')
+          .where('participantIds', 'array-contains', userId)
+          .orderBy('updatedAt', 'desc')
+          .limit(10)
+          .get();
+      }
 
       targetConversationIds = conversationsSnapshot.docs.map((doc) => doc.id);
       
