@@ -932,7 +932,7 @@ const styles = StyleSheet.create({
   },
   messagesList: {
     padding: 16,
-    paddingBottom: 8,
+    paddingBottom: 100, // Extra padding to prevent input from obscuring messages
   },
   messageBubble: {
     maxWidth: '80%',

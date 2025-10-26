@@ -45,20 +45,27 @@ interface ParsedPriorityMessage {
 
 export default function AgentResponseDisplay({ content, agentData }: AgentResponseDisplayProps) {
   const router = useRouter();
-  // Start with sections expanded by default
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['main', 'items', 'priorities']));
+  
+  // Create a unique ID for this instance based on content
+  const instanceId = React.useMemo(() => content.substring(0, 50).replace(/\s/g, ''), [content]);
+  
+  // Start with sections expanded by default for THIS instance
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    new Set([`main-${instanceId}`, `items-${instanceId}`, `priorities-${instanceId}`])
+  );
 
   // Check if response is action items or priorities
   const isActionItems = /action items?:/i.test(content) || /here are your action items/i.test(content);
   const isPriorities = /priorities/i.test(content) || /priority messages/i.test(content) || /current priorities/i.test(content);
 
   const toggleSection = (section: string) => {
+    const sectionKey = `${section}-${instanceId}`;
     setExpandedSections(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(section)) {
-        newSet.delete(section);
+      if (newSet.has(sectionKey)) {
+        newSet.delete(sectionKey);
       } else {
-        newSet.add(section);
+        newSet.add(sectionKey);
       }
       return newSet;
     });
@@ -301,12 +308,12 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
               📋 Action Items ({actionItems.length})
             </Text>
             <Text style={styles.expandIcon}>
-              {expandedSections.has('items') ? '▼' : '▶'}
+              {expandedSections.has(`items-${instanceId}`) ? '▼' : '▶'}
             </Text>
           </TouchableOpacity>
 
           {/* Action Items List */}
-          {expandedSections.has('items') && (
+          {expandedSections.has(`items-${instanceId}`) && (
             <View style={styles.itemsList}>
               {actionItems.map((item) => (
                 <TouchableOpacity
@@ -384,12 +391,12 @@ export default function AgentResponseDisplay({ content, agentData }: AgentRespon
               🔥 Priority Messages ({priorityMessages.length})
             </Text>
             <Text style={styles.expandIcon}>
-              {expandedSections.has('priorities') ? '▼' : '▶'}
+              {expandedSections.has(`priorities-${instanceId}`) ? '▼' : '▶'}
             </Text>
           </TouchableOpacity>
 
           {/* Priority Messages List */}
-          {expandedSections.has('priorities') && (
+          {expandedSections.has(`priorities-${instanceId}`) && (
             <View style={styles.itemsList}>
               {priorityMessages.map((item) => (
                 <TouchableOpacity
@@ -507,13 +514,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start', // Changed from 'center' to allow multi-line content
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
     maxWidth: '100%', // Prevent cards from overflowing
+    minHeight: 60, // Ensure cards have minimum height for content
   },
   priorityCard: {
     borderLeftWidth: 4,
@@ -584,12 +592,13 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: '#F59E0B',
     maxWidth: '100%', // Prevent overflow
+    minHeight: 40, // Allow for multi-line text
   },
   noteText: {
     fontSize: 12,
     color: '#92400E',
     fontStyle: 'italic',
-    flexWrap: 'wrap', // Allow text to wrap
+    lineHeight: 18, // Better line height for readability
   },
   fallbackText: {
     fontSize: 16,
