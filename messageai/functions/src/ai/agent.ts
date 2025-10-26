@@ -616,12 +616,12 @@ export const getConversationDecisions = functions.https.onCall(async (data, cont
     for (let i = 0; i < targetConversationIds.length; i += 10) {
       const batch = targetConversationIds.slice(i, i + 10);
 
+      // Query WITHOUT orderBy to avoid complex composite index requirement
+      // We'll sort in-memory instead
       const decisionsSnapshot = await admin
         .firestore()
         .collection('decisions')
         .where('conversationId', 'in', batch)
-        .orderBy('decidedAt', 'desc')
-        .limit(limit * 2)
         .get();
 
       decisionsSnapshot.forEach((doc) => {
@@ -639,8 +639,8 @@ export const getConversationDecisions = functions.https.onCall(async (data, cont
         });
       });
 
-      if (allDecisions.length >= limit) {
-        break;
+      if (allDecisions.length >= limit * 3) {
+        break; // Get more than we need for better sorting
       }
     }
 
