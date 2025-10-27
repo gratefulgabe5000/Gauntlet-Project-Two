@@ -1,10 +1,10 @@
 # MessageAI Technology Stack
 
-**Version:** 2.0  
-**Date:** October 23, 2025  
+**Version:** 3.0  
+**Date:** October 26, 2025  
 **Project:** MessageAI - AI-Enhanced Mobile Messaging Platform  
 **Target Platforms:** React Native + Expo (Primary) | Kotlin Android (Backup)  
-**Aligned Documents:** PRD v2.0 | TaskList v2.0 | WBS v2.0
+**Aligned Documents:** PRD v3.0 | TaskList v3.0 | WBS v3.0 | Bug Tracker v3.0 | Persona v3.0 | README v3.0
 
 ---
 
@@ -61,7 +61,7 @@ MessageAI is built using a modern, production-grade tech stack optimized for rap
 
 ### 1. Frontend Framework
 
-#### **React Native 0.74.5**
+#### **React Native 0.81.5**
 
 - **Purpose:** Core mobile framework for iOS and Android
 - **Why:** Industry standard for cross-platform mobile development
@@ -72,7 +72,7 @@ MessageAI is built using a modern, production-grade tech stack optimized for rap
   - Single codebase for iOS + Android
 - **Documentation:** <https://reactnative.dev/>
 
-#### **Expo SDK 51.0.0**
+#### **Expo SDK 54.0.20**
 
 - **Purpose:** Development platform and managed workflow for React Native
 - **Why:** Simplifies development, handles complex native configurations
@@ -90,7 +90,11 @@ MessageAI is built using a modern, production-grade tech stack optimized for rap
   - `expo-image-manipulator` - Image compression and resizing
   - `expo-constants` - App configuration
   - `expo-linking` - Deep linking
-  - `expo-auth-session` - OAuth flows
+  - `expo-crypto` - UUID generation and encryption utilities
+  - `expo-random` - Secure random number generation
+  - `expo-status-bar` - Status bar management
+  - `expo-document-picker` - Document selection (Phase 1B)
+  - `expo-av` - Audio/video support (Phase 1B)
 - **Documentation:** <https://docs.expo.dev/>
 
 #### **Expo Image Manipulator 11.8.0**
@@ -134,7 +138,7 @@ MessageAI is built using a modern, production-grade tech stack optimized for rap
 - **Installation:** Included in Expo SDK
 - **Documentation:** <https://docs.expo.dev/versions/latest/sdk/imagemanipulator/>
 
-#### **TypeScript 5.3.3**
+#### **TypeScript 5.9.2**
 
 - **Purpose:** Type-safe JavaScript for development
 - **Why:** Catch errors at compile time, better IDE support, self-documenting code
@@ -160,7 +164,7 @@ MessageAI is built using a modern, production-grade tech stack optimized for rap
 
 ### 2. UI & Styling
 
-#### **React Native Paper 5.11.0**
+#### **React Native Paper 5.14.5**
 
 - **Purpose:** Material Design component library
 - **Why:** Production-ready components, consistent design, accessibility built-in
@@ -185,17 +189,25 @@ MessageAI is built using a modern, production-grade tech stack optimized for rap
 
 - **Documentation:** <https://callstack.github.io/react-native-paper/>
 
-#### **React Native Vector Icons 10.0.3**
+#### **Expo Vector Icons (Built-in)**
 
 - **Purpose:** Icon library with multiple icon sets
-- **Why:** Comprehensive icon collection, tree-shakeable
+- **Why:** Comprehensive icon collection, integrated with Expo, no additional setup
 - **Icon Sets Used:**
-  - Material Icons (primary)
+  - MaterialCommunityIcons (primary)
   - Ionicons (iOS-style icons)
   - FontAwesome (social/brand icons)
-- **Documentation:** <https://github.com/oblador/react-native-vector-icons>
+- **Usage:**
 
-#### **React Native Reanimated 3.5.0**
+  ```typescript
+  import { MaterialCommunityIcons } from '@expo/vector-icons';
+  
+  <MaterialCommunityIcons name="send" size={24} color="blue" />
+  ```
+
+- **Documentation:** <https://docs.expo.dev/guides/icons/>
+
+#### **React Native Reanimated 4.1.1**
 
 - **Purpose:** High-performance animations
 - **Why:** 60 FPS animations on the UI thread
@@ -206,7 +218,7 @@ MessageAI is built using a modern, production-grade tech stack optimized for rap
   - Keyboard avoiding behavior
 - **Documentation:** <https://docs.swmansion.com/react-native-reanimated/>
 
-#### **React Native Gesture Handler 2.13.0**
+#### **React Native Gesture Handler 2.28.0**
 
 - **Purpose:** Native gesture recognition
 - **Why:** Better touch handling than React Native's default
@@ -217,37 +229,11 @@ MessageAI is built using a modern, production-grade tech stack optimized for rap
   - Drag to dismiss modals
 - **Documentation:** <https://docs.swmansion.com/react-native-gesture-handler/>
 
-#### **React Native Keyboard Aware Scroll View 0.9.5**
-
-- **Purpose:** Scroll view that adjusts for keyboard
-- **Why:** Better UX than built-in KeyboardAvoidingView for complex layouts
-- **Use Cases:**
-  - Conversation screen with message input
-  - Forms with multiple inputs
-  - Auto-scroll to focused input
-- **Configuration:**
-
-  ```typescript
-  import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-  
-  <KeyboardAwareScrollView
-    extraScrollHeight={20}
-    enableOnAndroid={true}
-    enableAutomaticScroll={true}
-    keyboardShouldPersistTaps="handled"
-  >
-    <MessageList messages={messages} />
-    <MessageInput onSend={sendMessage} />
-  </KeyboardAwareScrollView>
-  ```
-
-- **Installation:** `npm install react-native-keyboard-aware-scroll-view`
-- **Documentation:** <https://github.com/APSL/react-native-keyboard-aware-scroll-view>
-
-#### **React Error Boundary 4.0.11**
+#### **Custom Error Boundary Component**
 
 - **Purpose:** React error boundary with fallback UI
 - **Why:** Graceful error handling and user-friendly error screens
+- **Implementation:** Custom `ErrorBoundary` component in `src/components/shared/ErrorBoundary.tsx`
 - **Use Cases:**
   - Global error boundary for app crashes
   - Component-level error isolation
@@ -255,38 +241,19 @@ MessageAI is built using a modern, production-grade tech stack optimized for rap
 - **Configuration:**
 
   ```typescript
-  import { ErrorBoundary } from 'react-error-boundary';
-  
-  function ErrorFallback({ error, resetErrorBoundary }) {
-    return (
-      <View style={styles.errorContainer}>
-        <Icon name="alert-circle" size={64} color="red" />
-        <Text style={styles.errorTitle}>Something went wrong</Text>
-        <Text style={styles.errorMessage}>{error.message}</Text>
-        <Button onPress={resetErrorBoundary}>Try Again</Button>
-      </View>
-    );
-  }
+  import { ErrorBoundary } from '../src/components/shared/ErrorBoundary';
   
   // Wrap app in ErrorBoundary
-  // app/_layout.tsx
   export default function RootLayout() {
     return (
-      <ErrorBoundary
-        FallbackComponent={ErrorFallback}
-        onError={(error, errorInfo) => {
-          // Log to error reporting service
-          console.error('Error boundary caught:', error, errorInfo);
-        }}
-      >
+      <ErrorBoundary>
         <Slot />
       </ErrorBoundary>
     );
   }
   ```
 
-- **Installation:** `npm install react-error-boundary`
-- **Documentation:** <https://github.com/bvaughn/react-error-boundary>
+- **Note:** Custom implementation replaces third-party `react-error-boundary` package
 
 ---
 
@@ -327,7 +294,7 @@ MessageAI is built using a modern, production-grade tech stack optimized for rap
 
 ### 4. State Management
 
-#### **Zustand 4.4.7**
+#### **Zustand 5.0.8**
 
 - **Purpose:** Lightweight state management
 - **Why:** Simple API, no boilerplate, React hooks native, TypeScript support
@@ -360,7 +327,7 @@ MessageAI is built using a modern, production-grade tech stack optimized for rap
 - **Persistence:** `zustand/middleware` with `AsyncStorage`
 - **Documentation:** <https://zustand-demo.pmnd.rs/>
 
-#### **React Query (@tanstack/react-query) 5.17.0**
+#### **React Query (@tanstack/react-query) 5.90.5**
 
 - **Purpose:** Server state management and caching
 - **Why:** Automatic caching, refetching, optimistic updates
@@ -489,170 +456,77 @@ MessageAI is built using a modern, production-grade tech stack optimized for rap
 
 ### 6. Networking & Data Fetching
 
-#### **Axios 1.6.0**
+#### **Native Fetch API**
 
 - **Purpose:** HTTP client for API requests
-- **Why:** Better error handling than fetch, request/response interceptors
+- **Why:** Built-in, no dependencies, sufficient for our needs
 - **Configuration:**
 
   ```typescript
-  const apiClient = axios.create({
-    baseURL: 'https://us-central1-messageai-xxxxx.cloudfunctions.net',
-    timeout: 30000,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-  
-  // Request interceptor for auth
-  apiClient.interceptors.request.use((config) => {
-    const token = getAuthToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  // Wrapper for authenticated requests
+  async function fetchWithAuth(url: string, options: RequestInit = {}) {
+    const token = await getAuthToken();
+    
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-    return config;
-  });
-  
-  // Response interceptor for error handling
-  apiClient.interceptors.response.use(
-    (response) => response,
-    (error) => {
-      if (error.response?.status === 401) {
-        // Handle unauthorized
-      }
-      return Promise.reject(error);
-    }
-  );
+    
+    return response.json();
+  }
   ```
 
-- **Documentation:** <https://axios-http.com/>
+- **Use Cases:**
+  - Firebase Function calls
+  - OpenAI API requests (server-side)
+  - Image uploads
 
 ---
 
-### 7. Utilities & Helpers
+### 7. UUID Generation & Crypto
 
-#### **date-fns 3.0.0**
+#### **Expo Crypto**
 
-- **Purpose:** Date manipulation and formatting
-- **Why:** Lightweight alternative to Moment.js, tree-shakeable, immutable
+- **Purpose:** Cryptographic operations and UUID generation
+- **Why:** Secure, built into Expo SDK, no additional dependencies
 - **Use Cases:**
-  - Format message timestamps
-  - Calculate relative time ("2 minutes ago")
-  - Date validation
-  - Timezone conversions
-- **Common Functions:**
+  - Generate UUIDs for optimistic message IDs
+  - Cryptographic hashing
+  - Secure random data generation
+- **Usage:**
 
   ```typescript
-  import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
+  import * as Crypto from 'expo-crypto';
   
-  function formatMessageTimestamp(timestamp: Date) {
-    if (isToday(timestamp)) {
-      return format(timestamp, 'h:mm a');
-    } else if (isYesterday(timestamp)) {
-      return 'Yesterday';
-    } else {
-      return format(timestamp, 'MMM d, yyyy');
-    }
-  }
+  // Generate UUID
+  const messageId = Crypto.randomUUID();
+  
+  // Hash data
+  const hash = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    'data to hash'
+  );
   ```
 
-- **Documentation:** <https://date-fns.org/>
+- **Documentation:** <https://docs.expo.dev/versions/latest/sdk/crypto/>
 
-#### **Zod 3.22.4**
+#### **Expo Random**
 
-- **Purpose:** TypeScript-first schema validation
-- **Why:** Runtime type safety, excellent error messages, integrates with TypeScript
+- **Purpose:** Secure random byte generation
+- **Why:** Cryptographically secure random numbers
 - **Use Cases:**
-  - API response validation
-  - Form validation
-  - Environment variable validation
-  - AI SDK tool parameters
-- **Example:**
-
-  ```typescript
-  import { z } from 'zod';
-  
-  const MessageSchema = z.object({
-    id: z.string().uuid(),
-    conversationId: z.string().uuid(),
-    senderId: z.string().uuid(),
-    text: z.string().min(1).max(10000),
-    timestamp: z.date(),
-    status: z.enum(['sending', 'sent', 'delivered', 'read']),
-  });
-  
-  type Message = z.infer<typeof MessageSchema>;
-  ```
-
-- **Documentation:** <https://zod.dev/>
-
-#### **lodash 4.17.21**
-
-- **Purpose:** Utility library for common operations
-- **Why:** Battle-tested, performance optimized, comprehensive
-- **Functions Used:**
-  - `debounce` - Typing indicators
-  - `throttle` - Scroll events
-  - `groupBy` - Message grouping by date
-  - `sortBy` - Conversation sorting
-  - `uniqBy` - Deduplication
-- **Import Strategy:** Import individual functions for tree-shaking
-
-  ```typescript
-  import debounce from 'lodash/debounce';
-  import groupBy from 'lodash/groupBy';
-  ```
-
-- **Documentation:** <https://lodash.com/>
-
-#### **uuid 9.0.0**
-
-- **Purpose:** Generate RFC4122 UUIDs for client-side message IDs
-- **Why:** Required for optimistic UI updates before server confirmation
-- **Use Cases:**
-  - Generate temporary message IDs
-  - Optimistic message insertion
-  - Client-side ID generation for offline mode
-- **Configuration:**
-
-  ```typescript
-  import { v4 as uuidv4 } from 'uuid';
-  
-  // Optimistic message insertion
-  async function sendMessage(text: string) {
-    const tempId = uuidv4();
-    
-    // Add to local state immediately
-    const optimisticMessage = {
-      id: tempId,
-      conversationId,
-      senderId: currentUserId,
-      text,
-      timestamp: new Date(),
-      status: 'sending',
-      readBy: [currentUserId],
-    };
-    
-    addMessageToStore(optimisticMessage);
-    
-    // Send to server
-    try {
-      const docRef = await addDoc(
-        collection(db, `conversations/${conversationId}/messages`),
-        optimisticMessage
-      );
-      
-      // Update local message with server ID
-      updateMessageId(tempId, docRef.id);
-    } catch (error) {
-      updateMessageStatus(tempId, 'failed');
-    }
-  }
-  ```
-
-- **Installation:** `npm install uuid`
-- **Types:** `npm install -D @types/uuid`
-- **Documentation:** <https://github.com/uuidjs/uuid>
+  - Generate encryption keys
+  - Create secure tokens
+  - Random data for encryption
+- **Documentation:** <https://docs.expo.dev/versions/latest/sdk/random/>
 
 ---
 
@@ -660,7 +534,7 @@ MessageAI is built using a modern, production-grade tech stack optimized for rap
 
 ### 1. Firebase Platform
 
-#### **Firebase SDK 10.7.0**
+#### **Firebase SDK 12.4.0**
 
 - **Purpose:** Core Firebase functionality
 - **Why:** Comprehensive backend-as-a-service, real-time capabilities, proven at scale
@@ -899,11 +773,11 @@ service cloud.firestore {
 
 ### 4. Firebase Cloud Functions
 
-#### **Cloud Functions for Firebase (Node.js 20)**
+#### **Cloud Functions for Firebase (Node.js 18)**
 
 - **Purpose:** Serverless backend logic
 - **Why:** Scalable, secure API key storage, event-driven triggers
-- **Runtime:** Node.js 20
+- **Runtime:** Node.js 18
 - **Region:** us-central1 (lowest latency for US)
 - **Functions:**
 
@@ -974,19 +848,18 @@ export const onMessageCreatedTrigger = onDocumentCreated(
 
 ```json
 {
+  "engines": {
+    "node": "18"
+  },
   "dependencies": {
     "firebase-admin": "^12.0.0",
-    "firebase-functions": "^4.5.0",
+    "firebase-functions": "^5.0.0",
     "openai": "^4.20.0",
-    "ai": "^3.0.0",
-    "@ai-sdk/openai": "^0.0.20",
-    "@pinecone-database/pinecone": "^1.1.0",
-    "zod": "^3.22.4",
-    "cors": "^2.8.5"
+    "@pinecone-database/pinecone": "^6.1.2"
   },
   "devDependencies": {
-    "typescript": "^5.3.3",
-    "@types/node": "^20.10.0"
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
   }
 }
 ```
@@ -1148,7 +1021,7 @@ export const onMessageCreatedTrigger = onDocumentCreated(
     timeout: 30000,
   });
   
-  // Example usage
+  // Example usage - Direct OpenAI SDK calls
   async function summarizeThread(messages: string[]) {
     const response = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
@@ -1168,73 +1041,48 @@ export const onMessageCreatedTrigger = onDocumentCreated(
     
     return response.choices[0].message.content;
   }
+  
+  // Multi-step agent with direct OpenAI function calling
+  async function conversationIntelligenceAgent(query: string, userId: string) {
+    const tools = [
+      {
+        type: "function",
+        function: {
+          name: "getUserConversations",
+          description: "Get list of user's conversations",
+          parameters: {
+            type: "object",
+            properties: {
+              userId: { type: "string" }
+            }
+          }
+        }
+      },
+      // ... more tools
+    ];
+    
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4-turbo',
+      messages: [
+        { role: 'system', content: 'You are a conversation intelligence assistant...' },
+        { role: 'user', content: query }
+      ],
+      tools: tools,
+      tool_choice: 'auto',
+    });
+    
+    // Handle tool calls and multi-step reasoning
+    // ...
+  }
   ```
 
 - **Documentation:** <https://platform.openai.com/docs>
 
 ---
 
-### 2. Agent Framework
+### 2. Vector Database & Embeddings
 
-#### **AI SDK by Vercel 3.0.0**
-
-- **Purpose:** Framework for building AI agents with tool calling
-- **Why:** TypeScript-native, excellent streaming support, simple API, production-ready
-- **Key Features:**
-  - Tool calling / function execution
-  - Multi-step reasoning
-  - Streaming responses
-  - Type-safe tool definitions
-  - React hooks for UI integration
-- **Architecture:**
-
-  ```typescript
-  import { generateText, tool } from 'ai';
-  import { openai } from '@ai-sdk/openai';
-  import { z } from 'zod';
-  
-  const tools = {
-    getTeamMembers: tool({
-      description: 'Get list of team members in a conversation',
-      parameters: z.object({
-        conversationId: z.string(),
-      }),
-      execute: async ({ conversationId }) => {
-        const conversation = await getConversation(conversationId);
-        return conversation.participants;
-      },
-    }),
-    
-    createPoll: tool({
-      description: 'Create a poll in the conversation',
-      parameters: z.object({
-        question: z.string(),
-        options: z.array(z.string()),
-      }),
-      execute: async ({ question, options }) => {
-        const poll = await createPoll(question, options);
-        return { pollId: poll.id, success: true };
-      },
-    }),
-  };
-  
-  // Multi-step agent execution
-  const result = await generateText({
-    model: openai('gpt-4-turbo'),
-    tools: tools,
-    maxSteps: 10,
-    system: 'You are a team planning assistant...',
-    prompt: 'Plan a team offsite for next month',
-  });
-  ```
-
-- **Documentation:** <https://sdk.vercel.ai/docs>
-
----
-
-### 3. Vector Database & Embeddings
-
-#### **Pinecone (Managed Vector Database)**
+#### **Pinecone (Managed Vector Database) 6.1.2**
 
 - **Purpose:** Vector storage for semantic search
 - **Why:** Managed service, excellent performance, simple API, generous free tier
@@ -5210,10 +5058,10 @@ cd messageai
 
 ```bash
 # Core dependencies
-npm install expo-router expo-sqlite expo-notifications expo-image-picker expo-constants expo-image-manipulator
+npm install expo-router expo-sqlite expo-notifications expo-image-picker expo-constants expo-image-manipulator expo-crypto expo-random expo-linking expo-status-bar
 
 # UI libraries
-npm install react-native-paper react-native-vector-icons react-native-reanimated react-native-gesture-handler react-native-keyboard-aware-scroll-view react-error-boundary
+npm install react-native-paper react-native-reanimated react-native-gesture-handler
 
 # State management
 npm install zustand @tanstack/react-query
@@ -5224,16 +5072,10 @@ npm install firebase
 # Network & connectivity
 npm install @react-native-community/netinfo @react-native-async-storage/async-storage
 
-# Utilities
-npm install date-fns zod axios lodash uuid
-
-# Types
-npm install -D @types/lodash @types/uuid
-
 # Dev dependencies
-npm install -D eslint prettier @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint-config-prettier eslint-plugin-react eslint-plugin-react-hooks eslint-plugin-react-native
+npm install -D typescript @types/react
 
-# Testing
+# Testing (optional)
 npm install -D jest @testing-library/react-native @testing-library/jest-native
 ```
 
@@ -5256,35 +5098,14 @@ npm install expo-av
 # No additional packages needed for Expo Web
 ```
 
-**Phase 2B Dependencies (Voice/Video Calls):**
+**Phase 3B.2 Dependencies (GIF Support):**
 
 ```bash
-# Agora.io for WebRTC
-npm install react-native-agora
-```
-
-**Phase 3B Dependencies (Video, GIFs, Phone Auth):**
-
-```bash
-# Video thumbnails
-npm install expo-video-thumbnails
-
 # GIF support
-npm install @giphy/js-fetch-api @giphy/react-native-sdk
+npm install @giphy/js-fetch-api
 ```
 
-**Phase 4B Dependencies (Privacy & Storage):**
-
-```bash
-# File system operations
-npm install expo-file-system
-
-# Already included in core dependencies:
-# - @react-native-async-storage/async-storage
-# - @react-native-community/netinfo
-```
-
-**Note:** Optional dependencies add ~15-20 packages. Install only if implementing optional phases.
+**Note:** Optional dependencies add ~4-5 packages. Install only if implementing optional phases.
 
 #### 3. Configure Expo Router
 
@@ -5321,8 +5142,7 @@ firebase init
 
 ```bash
 cd functions
-npm install openai ai @ai-sdk/openai @pinecone-database/pinecone zod cors
-npm install -D @types/cors
+npm install openai @pinecone-database/pinecone
 cd ..
 ```
 
@@ -5388,20 +5208,41 @@ npm run android
 
 | Package | Version | React Native | Expo SDK | Node.js |
 |---------|---------|--------------|----------|---------|
-| react | 18.2.0 | 0.74+ | 51+ | 20+ |
-| react-native | 0.74.5 | - | 51+ | 20+ |
-| expo | ~51.0.0 | 0.74+ | - | 20+ |
-| typescript | 5.3.3 | Any | Any | 18+ |
-| firebase | 10.7.0 | 0.70+ | 49+ | 18+ |
+| react | 19.1.0 | 0.81+ | 54+ | 20+ |
+| react-native | 0.81.5 | - | 54+ | 20+ |
+| expo | ~54.0.20 | 0.81+ | - | 20+ |
+| typescript | 5.9.2 | Any | Any | 18+ |
+| firebase | 12.4.0 | 0.70+ | 49+ | 18+ |
 
-### Expo SDK 51 Packages
+### Expo SDK 54 Packages
 
 | Package | Version | Compatibility |
 |---------|---------|---------------|
-| expo-router | ~3.5.0 | Expo SDK 51+ |
-| expo-sqlite | ~14.0.0 | Expo SDK 51+ |
-| expo-notifications | ~0.28.0 | Expo SDK 51+ |
-| expo-image-picker | ~15.0.0 | Expo SDK 51+ |
+| expo-router | ~6.0.13 | Expo SDK 54+ |
+| expo-sqlite | ~16.0.8 | Expo SDK 54+ |
+| expo-notifications | ~0.32.12 | Expo SDK 54+ |
+| expo-image-picker | ~17.0.8 | Expo SDK 54+ |
+| expo-crypto | ~15.0.7 | Expo SDK 54+ |
+| expo-random | ~14.0.1 | Expo SDK 54+ |
+
+### UI & State Management
+
+| Package | Version | Compatibility |
+|---------|---------|---------------|
+| react-native-paper | 5.14.5 | React Native 0.70+ |
+| react-native-reanimated | 4.1.1 | React Native 0.74+ |
+| react-native-gesture-handler | 2.28.0 | React Native 0.70+ |
+| zustand | 5.0.8 | React 18+ |
+| @tanstack/react-query | 5.90.5 | React 18+ |
+
+### Backend (Cloud Functions)
+
+| Package | Version | Node.js |
+|---------|---------|---------|
+| firebase-admin | 12.0.0 | 18+ |
+| firebase-functions | 5.0.0 | 18+ |
+| openai | 4.20.0 | 18+ |
+| @pinecone-database/pinecone | 6.1.2 | 18+ |
 
 ### Testing
 
@@ -5421,6 +5262,8 @@ npm run android
 | 1.2 | Oct 20, 2025 | **Major Update:** Added 5 new sections based on EVAL-TechStack-Assessment recommendations: (1) AI Cost Optimization & Caching - Response caching (client/server), rate limiting, prompt optimization, batch processing, cost monitoring; (2) Error Handling Matrix - Comprehensive error categorization, user messages, recovery actions, logging strategies, safe AI request wrapper; (3) AI Edge Case Testing - Test scenarios for empty/minimal data, large data, special content, error conditions, boundary cases; (4) Monitoring & Observability - Firebase Performance Monitoring, custom logging strategy, log aggregation; (5) Performance Benchmarks - Target metrics for all features, performance testing tools, measurement methodologies |
 | 1.3 | Oct 20, 2025 | **WhatsApp Parity Update:** Added optional phase dependencies section (Phase 1B-4B); Phase 1B: react-native-encrypted-storage, crypto-js, expo-document-picker, expo-av; Phase 2B: react-native-agora; Phase 3B: expo-video-thumbnails, @giphy/js-fetch-api, @giphy/react-native-sdk; Phase 4B: expo-file-system; Total ~15-20 optional packages for WhatsApp experience parity features |
 | **2.0** | **Oct 23, 2025** | **MAJOR VERSION ALIGNMENT:** Synchronized all core documents to v2.0 for consistency; Updated cross-references to PRD v2.0, TaskList v2.0, WBS v2.0; Updated document date to October 23, 2025; No technical stack changes, version alignment only for document management |
+| **2.1** | **Oct 26, 2025** | **ACTUAL IMPLEMENTATION UPDATE:** Updated to reflect final implemented stack; **Version Updates:** React Native 0.81.5 (from 0.74.5), Expo SDK 54.0.20 (from 51), React 19.1.0 (from 18.2.0), TypeScript 5.9.2 (from 5.3.3), Firebase 12.4.0 (from 10.7.0), Firebase Functions 5.0.0 (from 4.5.0), Pinecone 6.1.2 (from 1.1.0), Zustand 5.0.8 (from 4.4.7), React Query 5.90.5 (from 5.17.0), Paper 5.14.5, Reanimated 4.1.1, Gesture Handler 2.28.0; **Removed Unused:** AI SDK by Vercel (not used - direct OpenAI SDK instead), axios (use native fetch), date-fns (use native Date), zod (not needed), lodash (not needed), uuid (replaced with expo-crypto), react-error-boundary (custom implementation), react-native-keyboard-aware-scroll-view (not used), react-native-vector-icons (use @expo/vector-icons built-in); **Added Missing:** expo-crypto, expo-random, expo-linking, expo-status-bar, react-native-worklets, react-native-safe-area-context, react-native-screens, react-native-web; **Node.js:** Functions use Node 18 (not 20); **Aligned with:** TaskList v2.3, WBS v2.3; Updated all code examples, setup instructions, and version matrix to reflect actual implementation |
+| **3.0** | **Oct 26, 2025** | **MAJOR VERSION ALIGNMENT:** Synchronized all core documents to v3.0 for consistency; Updated cross-references across all documents (PRD v3.0, TaskList v3.0, WBS v3.0, Bug Tracker v3.0, Persona v3.0, README v3.0); Unified version numbering for final submission; Updated aligned documents metadata in header; No technical stack changes, version synchronization only for document management |
 
 ---
 
